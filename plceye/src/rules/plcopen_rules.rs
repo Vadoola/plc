@@ -2,7 +2,7 @@
 
 use crate::analysis::PlcopenAnalysis;
 use crate::config::{EmptyRoutinesConfig, UndefinedTagsConfig, UnusedTagsConfig};
-use crate::report::{Report, Severity, Rule, RuleKind};
+use crate::report::{Report, Rule, RuleKind, Severity};
 
 /// Detect unused variables in PLCopen projects.
 pub struct PlcopenUnusedVarsDetector<'a> {
@@ -71,7 +71,10 @@ impl<'a> PlcopenUndefinedVarsDetector<'a> {
                 Severity::Info,
                 "project".to_string(),
                 var_name.clone(),
-                format!("Variable '{}' is used but not defined (may be external)", var_name),
+                format!(
+                    "Variable '{}' is used but not defined (may be external)",
+                    var_name
+                ),
             ));
         }
     }

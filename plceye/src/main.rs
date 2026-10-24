@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
-use plceye::{RuleConfig, RuleDetector, Report, ParseStats};
+use plceye::{ParseStats, Report, RuleConfig, RuleDetector};
 
 #[derive(Parser)]
 #[command(name = "plceye")]
@@ -121,7 +121,11 @@ fn main() -> ExitCode {
     if total_issues == 0 {
         println!("No issues found in {} file(s).", cli.files.len());
     } else {
-        println!("Found {} issue(s) in {} file(s).", total_issues, cli.files.len());
+        println!(
+            "Found {} issue(s) in {} file(s).",
+            total_issues,
+            cli.files.len()
+        );
     }
 
     if has_errors {
@@ -159,7 +163,7 @@ fn show_stats(files: &[PathBuf]) -> ExitCode {
 
     for file in files {
         println!("=== {} ===", file.display());
-        
+
         // Try to load the project to detect format
         match plceye::LoadedProject::from_file(file) {
             Ok(project) => {
@@ -221,7 +225,7 @@ fn print_stats(stats: &ParseStats) {
     println!();
     println!("Tag references:     {:>6}", stats.tag_references);
     println!("Unique tags:        {:>6}", stats.unique_tags);
-    
+
     // Only show complexity stats if there are ST routines
     if stats.st_parsed_ok > 0 {
         println!();

@@ -8,5 +8,7 @@
 mod cfg;
 mod nesting;
 
-pub use cfg::{Cfg, CfgBuilder, CfgNode, CfgEdge, NodeId, NodeKind, EdgeKind, count_expression_decisions};
+pub use cfg::{
+    count_expression_decisions, Cfg, CfgBuilder, CfgEdge, CfgNode, EdgeKind, NodeId, NodeKind,
+};
 pub use nesting::max_nesting_depth;

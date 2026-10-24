@@ -5,5 +5,5 @@
 mod l5x_graph;
 mod renderer;
 
-pub use l5x_graph::{L5xGraph, L5xNode, L5xNodeType, L5xEdge};
+pub use l5x_graph::{L5xEdge, L5xGraph, L5xNode, L5xNodeType};
 pub use renderer::SvgRenderer;

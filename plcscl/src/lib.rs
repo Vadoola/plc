@@ -99,7 +99,8 @@ pub fn parse_scl_secure(input: &str, limits: ParserLimits) -> Result<Program, Se
     // Convert to internal parser limits and parse with security checks
     let parser_limits = limits.to_parser_limits();
     let mut parser = Parser::with_limits(input, parser_limits);
-    parser.parse_program()
+    parser
+        .parse_program()
         .map_err(|e| SecureParseError::Parse(e.message().to_string()))
 }
 
@@ -108,7 +109,7 @@ pub fn parse_scl_secure(input: &str, limits: ParserLimits) -> Result<Program, Se
 pub enum SecureParseError {
     #[error("Parse error: {0}")]
     Parse(String),
-    
+
     #[error("Security limit exceeded: {0}")]
     Security(#[from] SecurityError),
 }

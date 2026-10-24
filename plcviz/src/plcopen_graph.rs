@@ -2,8 +2,8 @@
 //!
 //! This module builds various graph types from PLCopen TC6 XML files.
 
-use std::collections::HashSet;
 use plcopen::Project;
+use std::collections::HashSet;
 
 use crate::graph::{L5xGraph, L5xNodeType};
 
@@ -28,8 +28,8 @@ pub struct PlcopenGraphBuilder {
 impl PlcopenGraphBuilder {
     /// Create a new PLCopen graph builder
     pub fn new(project: Project, graph_type: PlcopenGraphType) -> Self {
-        Self { 
-            project, 
+        Self {
+            project,
             graph_type,
             raw_xml: None,
         }
@@ -58,7 +58,9 @@ impl PlcopenGraphBuilder {
         let mut graph = L5xGraph::new();
 
         // Get project name from content header
-        let project_name = self.project.content_header
+        let project_name = self
+            .project
+            .content_header
             .as_ref()
             .map(|h| h.name.as_str())
             .unwrap_or("Project");
@@ -73,7 +75,7 @@ impl PlcopenGraphBuilder {
                 for pou in &pous.pou {
                     let pou_id = format!("pou_{}", pou.name);
                     let pou_type = &pou.pou_type;
-                    
+
                     let node_type = match pou_type.to_lowercase().as_str() {
                         "program" => L5xNodeType::Program,
                         "function" => L5xNodeType::Routine,
@@ -103,7 +105,7 @@ impl PlcopenGraphBuilder {
             if let Some(ref pous) = types.pous {
                 for pou in &pous.pou {
                     pou_names.insert(pou.name.clone());
-                    
+
                     let pou_id = format!("pou_{}", pou.name);
                     graph.add_node(&pou_id, &pou.name, L5xNodeType::Routine);
                 }
@@ -159,7 +161,7 @@ impl PlcopenGraphBuilder {
 #[allow(dead_code)]
 fn extract_calls_from_pou_analysis(
     _pou: &plcopen::Root_project_InlineType_types_InlineType_pous_InlineType_pou_Inline,
-    _known_pous: &HashSet<String>
+    _known_pous: &HashSet<String>,
 ) -> Vec<String> {
     // Stub implementation - actual extraction requires better type access
     vec![]
@@ -170,14 +172,14 @@ fn extract_calls_from_pou_analysis(
 #[allow(dead_code)]
 fn extract_pou_calls_from_text(code: &str, known_pous: &HashSet<String>) -> Vec<String> {
     let mut calls = Vec::new();
-    
+
     // Simple word-based extraction
     for word in code.split(|c: char| !c.is_alphanumeric() && c != '_') {
         if known_pous.contains(word) {
             calls.push(word.to_string());
         }
     }
-    
+
     calls
 }
 
@@ -187,7 +189,7 @@ fn extract_pou_calls_from_text(code: &str, known_pous: &HashSet<String>) -> Vec<
 /// Extract referenced type names from a Data (baseType) structure
 fn extract_referenced_types(data: &plcopen::Data) -> Vec<String> {
     let mut types = Vec::new();
-    
+
     // Check for struct type
     if let Some(ref struct_type) = data.r#struct {
         // Extract types from struct members
@@ -202,19 +204,19 @@ fn extract_referenced_types(data: &plcopen::Data) -> Vec<String> {
             }
         }
     }
-    
+
     // Check for array type
     if let Some(ref array) = data.array {
         if let Some(ref base_type) = array.base_type {
             types.extend(extract_referenced_types(base_type));
         }
     }
-    
+
     // Check for derived (reference to another type)
     if let Some(ref derived) = data.derived {
         types.push(derived.name.clone());
     }
-    
+
     types.sort();
     types.dedup();
     types
@@ -223,9 +225,9 @@ fn extract_referenced_types(data: &plcopen::Data) -> Vec<String> {
 /// Extract called POUs from a POU's body using raw XML (legacy - kept for reference)
 #[allow(dead_code)]
 fn extract_calls_from_pou_with_xml(
-    pou: &plcopen::Root_project_InlineType_types_InlineType_pous_InlineType_pou_Inline, 
+    pou: &plcopen::Root_project_InlineType_types_InlineType_pous_InlineType_pou_Inline,
     known_pous: &HashSet<String>,
-    raw_xml: &str
+    raw_xml: &str,
 ) -> Vec<String> {
     let mut calls = Vec::new();
 
@@ -234,10 +236,10 @@ fn extract_calls_from_pou_with_xml(
     if let Some(pou_start) = raw_xml.find(&format!(r#"<pou name="{}""#, pou_name)) {
         if let Some(pou_end) = raw_xml[pou_start..].find("</pou>") {
             let pou_xml = &raw_xml[pou_start..pou_start + pou_end + 6];
-            
+
             // Extract all ST code from this POU
             let st_blocks = plcopen::st::extract_all_st_from_xml(pou_xml);
-            
+
             for (_, st_code) in st_blocks {
                 let pou_calls = extract_calls_from_st(&st_code, known_pous);
                 calls.extend(pou_calls);
@@ -266,7 +268,7 @@ fn extract_calls_from_st(code: &str, known_pous: &HashSet<String>) -> Vec<String
         Err(_) => {
             // If parsing fails, fall back to regex
             let re = regex::Regex::new(r"\b([A-Za-z_][A-Za-z0-9_]*)\s*\(").unwrap();
-            
+
             for cap in re.captures_iter(code) {
                 if let Some(name) = cap.get(1) {
                     let name_str = name.as_str().to_string();
@@ -282,9 +284,13 @@ fn extract_calls_from_st(code: &str, known_pous: &HashSet<String>) -> Vec<String
 }
 
 /// Extract calls from a declaration (function, program, etc.)
-fn extract_calls_from_declaration(decl: &iec61131::PouDeclaration, known_pous: &HashSet<String>, calls: &mut Vec<String>) {
+fn extract_calls_from_declaration(
+    decl: &iec61131::PouDeclaration,
+    known_pous: &HashSet<String>,
+    calls: &mut Vec<String>,
+) {
     use iec61131::PouDeclaration;
-    
+
     match decl {
         PouDeclaration::Function(func) => {
             for stmt in &func.body {
@@ -308,14 +314,24 @@ fn extract_calls_from_declaration(decl: &iec61131::PouDeclaration, known_pous: &
 }
 
 /// Recursively extract calls from a statement
-fn extract_calls_from_statement(stmt: &iec61131::Statement, known_pous: &HashSet<String>, calls: &mut Vec<String>) {
+fn extract_calls_from_statement(
+    stmt: &iec61131::Statement,
+    known_pous: &HashSet<String>,
+    calls: &mut Vec<String>,
+) {
     use iec61131::Statement;
-    
+
     match stmt {
         Statement::Assignment { value, .. } => {
             extract_calls_from_expression(value, known_pous, calls);
         }
-        Statement::If { condition, then_body, elsif_parts, else_body, .. } => {
+        Statement::If {
+            condition,
+            then_body,
+            elsif_parts,
+            else_body,
+            ..
+        } => {
             extract_calls_from_expression(condition, known_pous, calls);
             for s in then_body {
                 extract_calls_from_statement(s, known_pous, calls);
@@ -332,19 +348,29 @@ fn extract_calls_from_statement(stmt: &iec61131::Statement, known_pous: &HashSet
                 }
             }
         }
-        Statement::While { condition, body, .. } => {
+        Statement::While {
+            condition, body, ..
+        } => {
             extract_calls_from_expression(condition, known_pous, calls);
             for s in body {
                 extract_calls_from_statement(s, known_pous, calls);
             }
         }
-        Statement::Repeat { body, condition, .. } => {
+        Statement::Repeat {
+            body, condition, ..
+        } => {
             for s in body {
                 extract_calls_from_statement(s, known_pous, calls);
             }
             extract_calls_from_expression(condition, known_pous, calls);
         }
-        Statement::For { start, end, step, body, .. } => {
+        Statement::For {
+            start,
+            end,
+            step,
+            body,
+            ..
+        } => {
             extract_calls_from_expression(start, known_pous, calls);
             extract_calls_from_expression(end, known_pous, calls);
             if let Some(step_expr) = step {
@@ -354,7 +380,12 @@ fn extract_calls_from_statement(stmt: &iec61131::Statement, known_pous: &HashSet
                 extract_calls_from_statement(s, known_pous, calls);
             }
         }
-        Statement::Case { selector, cases, else_body, .. } => {
+        Statement::Case {
+            selector,
+            cases,
+            else_body,
+            ..
+        } => {
             extract_calls_from_expression(selector, known_pous, calls);
             for case in cases {
                 for s in &case.body {
@@ -367,7 +398,9 @@ fn extract_calls_from_statement(stmt: &iec61131::Statement, known_pous: &HashSet
                 }
             }
         }
-        Statement::FunctionCall { name, arguments, .. } => {
+        Statement::FunctionCall {
+            name, arguments, ..
+        } => {
             // Check if this is a known POU call
             if known_pous.contains(name) {
                 calls.push(name.clone());
@@ -377,7 +410,11 @@ fn extract_calls_from_statement(stmt: &iec61131::Statement, known_pous: &HashSet
                 extract_calls_from_argument(arg, known_pous, calls);
             }
         }
-        Statement::FbInvocation { instance: _, arguments, .. } => {
+        Statement::FbInvocation {
+            instance: _,
+            arguments,
+            ..
+        } => {
             // FB invocations use instance names, not POU names directly
             // But check arguments for nested calls
             for arg in arguments {
@@ -394,9 +431,13 @@ fn extract_calls_from_statement(stmt: &iec61131::Statement, known_pous: &HashSet
 }
 
 /// Extract calls from an argument
-fn extract_calls_from_argument(arg: &iec61131::Argument, known_pous: &HashSet<String>, calls: &mut Vec<String>) {
+fn extract_calls_from_argument(
+    arg: &iec61131::Argument,
+    known_pous: &HashSet<String>,
+    calls: &mut Vec<String>,
+) {
     use iec61131::Argument;
-    
+
     match arg {
         Argument::Positional(expr) | Argument::Named { value: expr, .. } => {
             extract_calls_from_expression(expr, known_pous, calls);
@@ -406,9 +447,13 @@ fn extract_calls_from_argument(arg: &iec61131::Argument, known_pous: &HashSet<St
 }
 
 /// Extract calls from an expression
-fn extract_calls_from_expression(expr: &iec61131::Expression, known_pous: &HashSet<String>, calls: &mut Vec<String>) {
+fn extract_calls_from_expression(
+    expr: &iec61131::Expression,
+    known_pous: &HashSet<String>,
+    calls: &mut Vec<String>,
+) {
     use iec61131::Expression;
-    
+
     match expr {
         Expression::Binary { left, right, .. } => {
             extract_calls_from_expression(left, known_pous, calls);
@@ -440,7 +485,7 @@ mod tests {
         known_pous.insert("AnotherFunction".to_string());
 
         let calls = extract_calls_from_st(code, &known_pous);
-        
+
         assert_eq!(calls.len(), 2);
         assert!(calls.contains(&"MyFunction".to_string()));
         assert!(calls.contains(&"AnotherFunction".to_string()));

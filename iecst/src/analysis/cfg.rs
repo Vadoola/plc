@@ -28,7 +28,7 @@
 //!        [Exit]
 //! ```
 
-use crate::ast::{Stmt, StmtKind, Expr, ExprKind, BinaryOp};
+use crate::ast::{BinaryOp, Expr, ExprKind, Stmt, StmtKind};
 use std::collections::{HashMap, HashSet};
 
 /// Unique identifier for a CFG node.
@@ -125,12 +125,18 @@ pub struct Cfg {
 impl Cfg {
     /// Get successor nodes.
     pub fn successors(&self, node: NodeId) -> &[NodeId] {
-        self.successors.get(&node).map(|v| v.as_slice()).unwrap_or(&[])
+        self.successors
+            .get(&node)
+            .map(|v| v.as_slice())
+            .unwrap_or(&[])
     }
 
     /// Get predecessor nodes.
     pub fn predecessors(&self, node: NodeId) -> &[NodeId] {
-        self.predecessors.get(&node).map(|v| v.as_slice()).unwrap_or(&[])
+        self.predecessors
+            .get(&node)
+            .map(|v| v.as_slice())
+            .unwrap_or(&[])
     }
 
     /// Get a node by ID.
@@ -163,7 +169,9 @@ impl Cfg {
     /// This often matches the edge-based calculation and is
     /// easier to understand.
     pub fn cyclomatic_complexity_decisions(&self) -> usize {
-        let decision_points = self.nodes.iter()
+        let decision_points = self
+            .nodes
+            .iter()
             .filter(|n| matches!(n.kind, NodeKind::Branch | NodeKind::LoopHeader))
             .count();
         1 + decision_points
@@ -184,7 +192,8 @@ impl Cfg {
             }
         }
 
-        self.nodes.iter()
+        self.nodes
+            .iter()
             .map(|n| n.id)
             .filter(|id| !visited.contains(id))
             .collect()
@@ -230,8 +239,10 @@ impl Cfg {
                 NodeKind::Branch | NodeKind::LoopHeader => "diamond",
                 _ => "box",
             };
-            dot.push_str(&format!("    n{} [label=\"{}\" shape={}];\n", 
-                node.id.0, label, shape));
+            dot.push_str(&format!(
+                "    n{} [label=\"{}\" shape={}];\n",
+                node.id.0, label, shape
+            ));
         }
 
         // Edges
@@ -243,8 +254,10 @@ impl Cfg {
                 EdgeKind::Return => "color=purple",
                 _ => "",
             };
-            dot.push_str(&format!("    n{} -> n{} [{}];\n", 
-                edge.from.0, edge.to.0, style));
+            dot.push_str(&format!(
+                "    n{} -> n{} [{}];\n",
+                edge.from.0, edge.to.0, style
+            ));
         }
 
         dot.push_str("}\n");
@@ -287,10 +300,10 @@ impl CfgBuilder {
         } else {
             // Process statements
             let (first, last_nodes) = self.process_statements(statements, 0);
-            
+
             // Connect entry to first statement
             self.add_edge(entry, first, EdgeKind::Sequential);
-            
+
             // Connect all terminal nodes to exit
             for last in last_nodes {
                 self.add_edge(last, exit, EdgeKind::Sequential);
@@ -392,25 +405,24 @@ impl CfgBuilder {
                 (node, vec![node], false)
             }
 
-            StmtKind::If { condition: _, then_body, elsif_branches, else_body } => {
-                self.process_if(stmt_index, then_body, elsif_branches, else_body)
-            }
+            StmtKind::If {
+                condition: _,
+                then_body,
+                elsif_branches,
+                else_body,
+            } => self.process_if(stmt_index, then_body, elsif_branches, else_body),
 
-            StmtKind::Case { expr: _, cases, else_body } => {
-                self.process_case(stmt_index, cases, else_body)
-            }
+            StmtKind::Case {
+                expr: _,
+                cases,
+                else_body,
+            } => self.process_case(stmt_index, cases, else_body),
 
-            StmtKind::For { body, .. } => {
-                self.process_for(stmt_index, body)
-            }
+            StmtKind::For { body, .. } => self.process_for(stmt_index, body),
 
-            StmtKind::While { body, .. } => {
-                self.process_while(stmt_index, body)
-            }
+            StmtKind::While { body, .. } => self.process_while(stmt_index, body),
 
-            StmtKind::Repeat { body, .. } => {
-                self.process_repeat(stmt_index, body)
-            }
+            StmtKind::Repeat { body, .. } => self.process_repeat(stmt_index, body),
 
             StmtKind::Return { .. } => {
                 let node = self.create_basic_block(stmt_index, &stmt.kind);
@@ -527,7 +539,7 @@ impl CfgBuilder {
         self.loop_headers.push(header);
 
         let (body_first, body_exits) = self.process_statements(body, stmt_index + 1);
-        
+
         // Pop loop context
         self.loop_exits.pop();
         self.loop_headers.pop();
@@ -632,20 +644,23 @@ mod tests {
 
     #[test]
     fn test_if_then_else() {
-        let cfg = parse_and_build_cfg(r#"
+        let cfg = parse_and_build_cfg(
+            r#"
             IF a THEN
                 x := 1;
             ELSE
                 x := 2;
             END_IF;
-        "#);
+        "#,
+        );
         // One branch point = complexity 2
         assert_eq!(cfg.cyclomatic_complexity_decisions(), 2);
     }
 
     #[test]
     fn test_if_elsif_else() {
-        let cfg = parse_and_build_cfg(r#"
+        let cfg = parse_and_build_cfg(
+            r#"
             IF a THEN
                 x := 1;
             ELSIF b THEN
@@ -653,48 +668,56 @@ mod tests {
             ELSE
                 x := 3;
             END_IF;
-        "#);
+        "#,
+        );
         // Two branch points = complexity 3
         assert_eq!(cfg.cyclomatic_complexity_decisions(), 3);
     }
 
     #[test]
     fn test_nested_if() {
-        let cfg = parse_and_build_cfg(r#"
+        let cfg = parse_and_build_cfg(
+            r#"
             IF a THEN
                 IF b THEN
                     x := 1;
                 END_IF;
             END_IF;
-        "#);
+        "#,
+        );
         // Two branch points = complexity 3
         assert_eq!(cfg.cyclomatic_complexity_decisions(), 3);
     }
 
     #[test]
     fn test_while_loop() {
-        let cfg = parse_and_build_cfg(r#"
+        let cfg = parse_and_build_cfg(
+            r#"
             WHILE x < 10 DO
                 x := x + 1;
             END_WHILE;
-        "#);
+        "#,
+        );
         // One loop = complexity 2
         assert_eq!(cfg.cyclomatic_complexity_decisions(), 2);
     }
 
     #[test]
     fn test_for_loop() {
-        let cfg = parse_and_build_cfg(r#"
+        let cfg = parse_and_build_cfg(
+            r#"
             FOR i := 1 TO 10 DO
                 x := x + i;
             END_FOR;
-        "#);
+        "#,
+        );
         assert_eq!(cfg.cyclomatic_complexity_decisions(), 2);
     }
 
     #[test]
     fn test_complex_example() {
-        let cfg = parse_and_build_cfg(r#"
+        let cfg = parse_and_build_cfg(
+            r#"
             IF a THEN
                 WHILE x < 10 DO
                     IF b THEN
@@ -708,7 +731,8 @@ mod tests {
                     y := y + i;
                 END_FOR;
             END_IF;
-        "#);
+        "#,
+        );
         // IF + ELSIF + WHILE + nested IF + FOR = 5 decision points
         // Complexity = 6
         assert_eq!(cfg.cyclomatic_complexity_decisions(), 6);
@@ -716,11 +740,13 @@ mod tests {
 
     #[test]
     fn test_unreachable_after_return() {
-        let cfg = parse_and_build_cfg(r#"
+        let cfg = parse_and_build_cfg(
+            r#"
             x := 1;
             RETURN;
             y := 2;
-        "#);
+        "#,
+        );
         let unreachable = cfg.unreachable_nodes();
         // y := 2 should be unreachable
         assert!(!unreachable.is_empty() || cfg.nodes.len() >= 4);
@@ -728,11 +754,13 @@ mod tests {
 
     #[test]
     fn test_dot_output() {
-        let cfg = parse_and_build_cfg(r#"
+        let cfg = parse_and_build_cfg(
+            r#"
             IF a THEN
                 x := 1;
             END_IF;
-        "#);
+        "#,
+        );
         let dot = cfg.to_dot();
         assert!(dot.contains("digraph CFG"));
         assert!(dot.contains("Entry"));
@@ -741,7 +769,8 @@ mod tests {
 
     #[test]
     fn test_case_statement() {
-        let cfg = parse_and_build_cfg(r#"
+        let cfg = parse_and_build_cfg(
+            r#"
             CASE x OF
                 1: y := 1;
                 2: y := 2;
@@ -749,7 +778,8 @@ mod tests {
             ELSE
                 y := 0;
             END_CASE;
-        "#);
+        "#,
+        );
         // CASE is one branch point (even with multiple cases)
         assert_eq!(cfg.cyclomatic_complexity_decisions(), 2);
     }

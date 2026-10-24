@@ -25,7 +25,10 @@ impl FromStr for GraphType {
             "call" | "callgraph" | "calls" | "c" => Ok(GraphType::CallGraph),
             "dataflow" | "data" | "flow" | "d" => Ok(GraphType::DataFlow),
             "combined" | "all" | "a" => Ok(GraphType::Combined),
-            _ => Err(format!("Unknown graph type: '{}'. Valid: structure, call, dataflow, combined", s)),
+            _ => Err(format!(
+                "Unknown graph type: '{}'. Valid: structure, call, dataflow, combined",
+                s
+            )),
         }
     }
 }

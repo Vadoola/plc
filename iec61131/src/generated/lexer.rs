@@ -142,37 +142,37 @@ pub enum Token {
     StringLiteral(String),
     TimeLiteral(String),
     DirectVariable(String),
-    
+
     // Operators
-    Plus,             // +
-    Minus,            // -
-    Star,             // *
-    Slash,            // /
-    Power,            // **
-    Ampersand,        // &
-    Equal,            // =
-    NotEqual,         // <>
-    Less,             // <
-    LessEqual,        // <=
-    Greater,          // >
-    GreaterEqual,     // >=
-    Assign,           // :=
-    Arrow,            // =>
-    DotDot,           // ..
-    Percent,          // %
-    Hash,             // #
-    Caret,            // ^
-    
+    Plus,         // +
+    Minus,        // -
+    Star,         // *
+    Slash,        // /
+    Power,        // **
+    Ampersand,    // &
+    Equal,        // =
+    NotEqual,     // <>
+    Less,         // <
+    LessEqual,    // <=
+    Greater,      // >
+    GreaterEqual, // >=
+    Assign,       // :=
+    Arrow,        // =>
+    DotDot,       // ..
+    Percent,      // %
+    Hash,         // #
+    Caret,        // ^
+
     // Delimiters
-    LParen,           // (
-    RParen,           // )
-    LBracket,         // [
-    RBracket,         // ]
-    Semicolon,        // ;
-    Colon,            // :
-    Comma,            // ,
-    Dot,              // .
-    
+    LParen,    // (
+    RParen,    // )
+    LBracket,  // [
+    RBracket,  // ]
+    Semicolon, // ;
+    Colon,     // :
+    Comma,     // ,
+    Dot,       // .
+
     // Special
     Eof,
 }
@@ -216,31 +216,31 @@ impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Self {
         Self { input, position: 0 }
     }
-    
+
     pub fn next_token(&mut self) -> SpannedToken {
         self.skip_whitespace_and_comments();
-        
+
         let start = self.position;
-        
+
         if self.position >= self.input.len() {
             return SpannedToken {
                 token: Token::Eof,
                 span: Span::new(start, start),
             };
         }
-        
+
         let ch = self.current_char();
-        
+
         // Identifiers and keywords
         if ch.is_alphabetic() || ch == '_' {
             return self.scan_identifier();
         }
-        
+
         // Numbers
         if ch.is_numeric() {
             return self.scan_number();
         }
-        
+
         // String literals
         if ch == '\'' {
             return self.scan_string_literal('\'');
@@ -248,27 +248,66 @@ impl<'a> Lexer<'a> {
         if ch == '"' {
             return self.scan_string_literal('"');
         }
-        
+
         // Direct variables %IX0.0
         if ch == '%' {
             return self.scan_direct_variable();
         }
-        
+
         // Operators and delimiters
         let token = match ch {
-            '+' => { self.advance(); Token::Plus }
-            '-' => { self.advance(); Token::Minus }
-            '/' => { self.advance(); Token::Slash }
-            '&' => { self.advance(); Token::Ampersand }
-            '%' => { self.advance(); Token::Percent }
-            '#' => { self.advance(); Token::Hash }
-            '^' => { self.advance(); Token::Caret }
-            '(' => { self.advance(); Token::LParen }
-            ')' => { self.advance(); Token::RParen }
-            '[' => { self.advance(); Token::LBracket }
-            ']' => { self.advance(); Token::RBracket }
-            ';' => { self.advance(); Token::Semicolon }
-            ',' => { self.advance(); Token::Comma }
+            '+' => {
+                self.advance();
+                Token::Plus
+            }
+            '-' => {
+                self.advance();
+                Token::Minus
+            }
+            '/' => {
+                self.advance();
+                Token::Slash
+            }
+            '&' => {
+                self.advance();
+                Token::Ampersand
+            }
+            '%' => {
+                self.advance();
+                Token::Percent
+            }
+            '#' => {
+                self.advance();
+                Token::Hash
+            }
+            '^' => {
+                self.advance();
+                Token::Caret
+            }
+            '(' => {
+                self.advance();
+                Token::LParen
+            }
+            ')' => {
+                self.advance();
+                Token::RParen
+            }
+            '[' => {
+                self.advance();
+                Token::LBracket
+            }
+            ']' => {
+                self.advance();
+                Token::RBracket
+            }
+            ';' => {
+                self.advance();
+                Token::Semicolon
+            }
+            ',' => {
+                self.advance();
+                Token::Comma
+            }
             '*' => {
                 self.advance();
                 if self.current_char() == '*' {
@@ -331,13 +370,13 @@ impl<'a> Lexer<'a> {
                 Token::Eof // Unknown character
             }
         };
-        
+
         SpannedToken {
             token,
             span: Span::new(start, self.position),
         }
     }
-    
+
     fn scan_identifier(&mut self) -> SpannedToken {
         let start = self.position;
         while self.position < self.input.len() {
@@ -348,16 +387,16 @@ impl<'a> Lexer<'a> {
                 break;
             }
         }
-        
+
         let text = &self.input[start..self.position];
         let token = Self::keyword_or_identifier(text);
-        
+
         SpannedToken {
             token,
             span: Span::new(start, self.position),
         }
     }
-    
+
     fn keyword_or_identifier(text: &str) -> Token {
         match text.to_uppercase().as_str() {
             "BOOL" => Token::Bool,
@@ -492,15 +531,15 @@ impl<'a> Lexer<'a> {
             _ => Token::Identifier(text.to_string()),
         }
     }
-    
+
     fn scan_number(&mut self) -> SpannedToken {
         let start = self.position;
-        
+
         // Integer part
         while self.position < self.input.len() && self.current_char().is_numeric() {
             self.advance();
         }
-        
+
         // Check for real literal (has decimal point)
         // But don't consume '..' (range operator)
         if self.position < self.input.len() && self.current_char() == '.' {
@@ -513,23 +552,27 @@ impl<'a> Lexer<'a> {
                     span: Span::new(start, self.position),
                 };
             }
-            
+
             self.advance();
             while self.position < self.input.len() && self.current_char().is_numeric() {
                 self.advance();
             }
-            
+
             // Exponent
-            if self.position < self.input.len() && (self.current_char() == 'E' || self.current_char() == 'e') {
+            if self.position < self.input.len()
+                && (self.current_char() == 'E' || self.current_char() == 'e')
+            {
                 self.advance();
-                if self.position < self.input.len() && (self.current_char() == '+' || self.current_char() == '-') {
+                if self.position < self.input.len()
+                    && (self.current_char() == '+' || self.current_char() == '-')
+                {
                     self.advance();
                 }
                 while self.position < self.input.len() && self.current_char().is_numeric() {
                     self.advance();
                 }
             }
-            
+
             SpannedToken {
                 token: Token::RealLiteral(self.input[start..self.position].to_string()),
                 span: Span::new(start, self.position),
@@ -541,11 +584,11 @@ impl<'a> Lexer<'a> {
             }
         }
     }
-    
+
     fn scan_string_literal(&mut self, quote: char) -> SpannedToken {
         let start = self.position;
         self.advance(); // Skip opening quote
-        
+
         let mut value = String::new();
         while self.position < self.input.len() {
             let ch = self.current_char();
@@ -556,17 +599,17 @@ impl<'a> Lexer<'a> {
             value.push(ch);
             self.advance();
         }
-        
+
         SpannedToken {
             token: Token::StringLiteral(value),
             span: Span::new(start, self.position),
         }
     }
-    
+
     fn scan_direct_variable(&mut self) -> SpannedToken {
         let start = self.position;
         self.advance(); // Skip %
-        
+
         // Read %IX0.0 format
         while self.position < self.input.len() {
             let ch = self.current_char();
@@ -576,13 +619,13 @@ impl<'a> Lexer<'a> {
                 break;
             }
         }
-        
+
         SpannedToken {
             token: Token::DirectVariable(self.input[start..self.position].to_string()),
             span: Span::new(start, self.position),
         }
     }
-    
+
     fn skip_whitespace_and_comments(&mut self) {
         loop {
             // Skip whitespace
@@ -594,12 +637,12 @@ impl<'a> Lexer<'a> {
                     break;
                 }
             }
-            
+
             // Skip comments
             if self.position + 1 < self.input.len() {
                 let ch1 = self.current_char();
                 let ch2 = self.input.as_bytes()[self.position + 1] as char;
-                
+
                 // Line comment //
                 if ch1 == '/' && ch2 == '/' {
                     while self.position < self.input.len() && self.current_char() != '\n' {
@@ -607,13 +650,15 @@ impl<'a> Lexer<'a> {
                     }
                     continue;
                 }
-                
+
                 // Block comment (* ... *)
                 if ch1 == '(' && ch2 == '*' {
                     self.advance(); // (
                     self.advance(); // *
                     while self.position + 1 < self.input.len() {
-                        if self.current_char() == '*' && self.input.as_bytes()[self.position + 1] as char == ')' {
+                        if self.current_char() == '*'
+                            && self.input.as_bytes()[self.position + 1] as char == ')'
+                        {
                             self.advance(); // *
                             self.advance(); // )
                             break;
@@ -622,13 +667,15 @@ impl<'a> Lexer<'a> {
                     }
                     continue;
                 }
-                
+
                 // Block comment /* ... */
                 if ch1 == '/' && ch2 == '*' {
                     self.advance(); // /
                     self.advance(); // *
                     while self.position + 1 < self.input.len() {
-                        if self.current_char() == '*' && self.input.as_bytes()[self.position + 1] as char == '/' {
+                        if self.current_char() == '*'
+                            && self.input.as_bytes()[self.position + 1] as char == '/'
+                        {
                             self.advance(); // *
                             self.advance(); // /
                             break;
@@ -638,11 +685,11 @@ impl<'a> Lexer<'a> {
                     continue;
                 }
             }
-            
+
             break;
         }
     }
-    
+
     fn current_char(&self) -> char {
         if self.position < self.input.len() {
             self.input.as_bytes()[self.position] as char
@@ -650,7 +697,7 @@ impl<'a> Lexer<'a> {
             '\0'
         }
     }
-    
+
     fn advance(&mut self) {
         self.position += 1;
     }

@@ -64,7 +64,7 @@ pub enum Token {
     EndStruct,
     Array,
     Of,
-    String_,  // STRING keyword (avoiding conflict with String type)
+    String_, // STRING keyword (avoiding conflict with String type)
     WString,
 
     // Keywords - Control flow
@@ -90,43 +90,43 @@ pub enum Token {
     Continue,
 
     // Operators - Arithmetic
-    Plus,       // +
-    Minus,      // -
-    Star,       // *
-    Slash,      // /
-    Mod,        // MOD
-    Power,      // **
+    Plus,  // +
+    Minus, // -
+    Star,  // *
+    Slash, // /
+    Mod,   // MOD
+    Power, // **
 
     // Operators - Comparison
-    Eq,         // =
-    Ne,         // <>
-    Lt,         // <
-    Le,         // <=
-    Gt,         // >
-    Ge,         // >=
+    Eq, // =
+    Ne, // <>
+    Lt, // <
+    Le, // <=
+    Gt, // >
+    Ge, // >=
 
     // Operators - Logical
-    And,        // AND, &
-    Or,         // OR
-    Xor,        // XOR
-    Not,        // NOT
+    And, // AND, &
+    Or,  // OR
+    Xor, // XOR
+    Not, // NOT
 
     // Operators - Assignment
-    Assign,     // :=
+    Assign,       // :=
     OutputAssign, // =>
 
     // Delimiters
-    LParen,     // (
-    RParen,     // )
-    LBracket,   // [
-    RBracket,   // ]
-    Comma,      // ,
-    Semicolon,  // ;
-    Colon,      // :
-    Dot,        // .
-    DotDot,     // ..
-    Hash,       // #
-    Percent,    // %
+    LParen,    // (
+    RParen,    // )
+    LBracket,  // [
+    RBracket,  // ]
+    Comma,     // ,
+    Semicolon, // ;
+    Colon,     // :
+    Dot,       // .
+    DotDot,    // ..
+    Hash,      // #
+    Percent,   // %
 
     /// Direct address: %IX0.0, %MW100, etc.
     DirectAddress(String),
@@ -376,8 +376,7 @@ impl<'a> Lexer<'a> {
         // Check for base prefix: 2#, 8#, 16#
         let base = if self.remaining().len() >= 2 {
             let prefix = &self.remaining()[..2];
-            if prefix.chars().next().unwrap().is_ascii_digit()
-                && prefix.chars().nth(1) == Some('#')
+            if prefix.chars().next().unwrap().is_ascii_digit() && prefix.chars().nth(1) == Some('#')
             {
                 let base_char = prefix.chars().next().unwrap();
                 match base_char {
@@ -416,7 +415,8 @@ impl<'a> Lexer<'a> {
         }
 
         // Check for decimal point (real number)
-        let is_real = if base.is_none() && self.peek() == Some('.') && self.peek_next() != Some('.') {
+        let is_real = if base.is_none() && self.peek() == Some('.') && self.peek_next() != Some('.')
+        {
             self.advance(); // consume '.'
             while self
                 .peek()
@@ -436,11 +436,7 @@ impl<'a> Lexer<'a> {
             if self.peek() == Some('+') || self.peek() == Some('-') {
                 self.advance();
             }
-            while self
-                .peek()
-                .map(|c| c.is_ascii_digit())
-                .unwrap_or(false)
-            {
+            while self.peek().map(|c| c.is_ascii_digit()).unwrap_or(false) {
                 self.advance();
             }
             true
@@ -598,14 +594,15 @@ impl<'a> Lexer<'a> {
         // Check for time/date literals first (before identifiers)
         if c.is_alphabetic() || c == '_' {
             let remaining = self.remaining().to_uppercase();
-            if c.is_alphabetic() && (remaining.starts_with("TIME#")
-                || remaining.starts_with("T#")
-                || remaining.starts_with("DATE#")
-                || remaining.starts_with("D#")
-                || remaining.starts_with("TIME_OF_DAY#")
-                || remaining.starts_with("TOD#")
-                || remaining.starts_with("DATE_AND_TIME#")
-                || remaining.starts_with("DT#"))
+            if c.is_alphabetic()
+                && (remaining.starts_with("TIME#")
+                    || remaining.starts_with("T#")
+                    || remaining.starts_with("DATE#")
+                    || remaining.starts_with("D#")
+                    || remaining.starts_with("TIME_OF_DAY#")
+                    || remaining.starts_with("TOD#")
+                    || remaining.starts_with("DATE_AND_TIME#")
+                    || remaining.starts_with("DT#"))
             {
                 return self.lex_time_literal();
             }
@@ -690,13 +687,24 @@ impl<'a> Lexer<'a> {
             '%' => {
                 // Direct address: %IX0.0, %MW100, %QD5, etc.
                 // Format: % [I|Q|M] [X|B|W|D|L]? address
-                if self.peek().map(|c| matches!(c, 'I' | 'Q' | 'M' | 'i' | 'q' | 'm')).unwrap_or(false) {
+                if self
+                    .peek()
+                    .map(|c| matches!(c, 'I' | 'Q' | 'M' | 'i' | 'q' | 'm'))
+                    .unwrap_or(false)
+                {
                     // Read the rest of the direct address
-                    while self.peek().map(|c| c.is_alphanumeric() || c == '.' || c == '_').unwrap_or(false) {
+                    while self
+                        .peek()
+                        .map(|c| c.is_alphanumeric() || c == '.' || c == '_')
+                        .unwrap_or(false)
+                    {
                         self.advance();
                     }
                     let text = &self.input[start..self.pos];
-                    SpannedToken::new(Token::DirectAddress(text.to_string()), Span::new(start, self.pos))
+                    SpannedToken::new(
+                        Token::DirectAddress(text.to_string()),
+                        Span::new(start, self.pos),
+                    )
                 } else {
                     SpannedToken::new(Token::Percent, span_one)
                 }

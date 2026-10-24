@@ -27,36 +27,36 @@ impl ParserLimits {
     /// Balanced limits suitable for most use cases
     pub fn balanced() -> Self {
         ParserLimits {
-            max_input_size: 100 * 1024 * 1024,      // 100 MB
-            max_iterations: 1_000_000,              // 1M iterations
-            max_depth: 256,                         // 256 levels deep
-            max_collection_size: 100_000,           // 100K items
-            max_statements: 10_000_000,             // 10M statements
-            max_string_length: 1024 * 1024,         // 1 MB strings
+            max_input_size: 100 * 1024 * 1024, // 100 MB
+            max_iterations: 1_000_000,         // 1M iterations
+            max_depth: 256,                    // 256 levels deep
+            max_collection_size: 100_000,      // 100K items
+            max_statements: 10_000_000,        // 10M statements
+            max_string_length: 1024 * 1024,    // 1 MB strings
         }
     }
 
     /// Strict limits for untrusted/external input
     pub fn strict() -> Self {
         ParserLimits {
-            max_input_size: 10 * 1024 * 1024,       // 10 MB
-            max_iterations: 100_000,                // 100K iterations
-            max_depth: 64,                          // 64 levels
-            max_collection_size: 10_000,            // 10K items
-            max_statements: 1_000_000,              // 1M statements
-            max_string_length: 64 * 1024,           // 64 KB strings
+            max_input_size: 10 * 1024 * 1024, // 10 MB
+            max_iterations: 100_000,          // 100K iterations
+            max_depth: 64,                    // 64 levels
+            max_collection_size: 10_000,      // 10K items
+            max_statements: 1_000_000,        // 1M statements
+            max_string_length: 64 * 1024,     // 64 KB strings
         }
     }
 
     /// Relaxed limits for trusted/internal files
     pub fn relaxed() -> Self {
         ParserLimits {
-            max_input_size: 500 * 1024 * 1024,      // 500 MB
-            max_iterations: 10_000_000,             // 10M iterations
-            max_depth: 512,                         // 512 levels
-            max_collection_size: 1_000_000,         // 1M items
-            max_statements: 100_000_000,            // 100M statements
-            max_string_length: 10 * 1024 * 1024,    // 10 MB strings
+            max_input_size: 500 * 1024 * 1024,   // 500 MB
+            max_iterations: 10_000_000,          // 10M iterations
+            max_depth: 512,                      // 512 levels
+            max_collection_size: 1_000_000,      // 1M items
+            max_statements: 100_000_000,         // 100M statements
+            max_string_length: 10 * 1024 * 1024, // 10 MB strings
         }
     }
 }
@@ -164,19 +164,19 @@ impl ParserState {
 pub enum SecurityError {
     #[error("Maximum nesting depth exceeded: {current} > {limit}")]
     DepthExceeded { current: usize, limit: usize },
-    
+
     #[error("Too many statements: {count} > {limit}")]
     TooManyStatements { count: usize, limit: usize },
-    
+
     #[error("Too many iterations: {count} > {limit}")]
     TooManyIterations { count: usize, limit: usize },
-    
+
     #[error("Collection too large: {size} items > {limit}")]
     CollectionTooLarge { size: usize, limit: usize },
-    
+
     #[error("String too long: {length} bytes > {limit}")]
     StringTooLong { length: usize, limit: usize },
-    
+
     #[error("Input too large: {size} bytes > {limit}")]
     InputTooLarge { size: usize, limit: usize },
 }
@@ -204,7 +204,7 @@ mod tests {
     fn test_depth_tracking() {
         let limits = ParserLimits::strict();
         let mut state = ParserState::new(limits);
-        
+
         for _ in 0..64 {
             assert!(state.enter_depth().is_ok());
         }
@@ -217,7 +217,7 @@ mod tests {
             max_statements: 10,
             ..ParserLimits::default()
         });
-        
+
         for _ in 0..10 {
             assert!(state.record_statement().is_ok());
         }

@@ -3,16 +3,17 @@
 //! Extract and parse ladder logic rungs from L5X structures.
 
 use l5x::rll;
-use l5x::{
-    Routine, Rung,
-    RungCollection, TextWide,
-};
+use l5x::{Routine, Rung, RungCollection, TextWide};
 
-use super::{RungLocation, LocatedRung};
+use super::{LocatedRung, RungLocation};
 
 /// Extract the text content from a TextWide element.
 pub fn extract_text_content(text_wide: &TextWide) -> Option<String> {
-    text_wide.text.as_ref().map(|t| t.trim().to_string()).filter(|t| !t.is_empty())
+    text_wide
+        .text
+        .as_ref()
+        .map(|t| t.trim().to_string())
+        .filter(|t| !t.is_empty())
 }
 
 /// Extract rung text from a Rung element.
@@ -62,7 +63,11 @@ pub fn parse_routine(routine: &Routine, program: &str) -> Vec<LocatedRung> {
     }
 
     for rung_collection in &routine.rllcontent {
-        results.extend(parse_rung_collection(rung_collection, program, &routine.name));
+        results.extend(parse_rung_collection(
+            rung_collection,
+            program,
+            &routine.name,
+        ));
     }
 
     results

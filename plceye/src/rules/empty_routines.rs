@@ -7,7 +7,7 @@ use l5x::Controller;
 use crate::analysis::ProjectAnalysis;
 
 use crate::config::EmptyRoutinesConfig;
-use crate::report::{Report, Severity, Rule, RuleKind};
+use crate::report::{Report, Rule, RuleKind, Severity};
 
 /// Detector for empty routines.
 pub struct EmptyRoutinesDetector<'a> {
@@ -21,7 +21,12 @@ impl<'a> EmptyRoutinesDetector<'a> {
     }
 
     /// Run detection on a controller and add findings to the report.
-    pub fn detect(&self, _controller: &Controller, analysis: &ProjectAnalysis, report: &mut Report) {
+    pub fn detect(
+        &self,
+        _controller: &Controller,
+        analysis: &ProjectAnalysis,
+        report: &mut Report,
+    ) {
         if !self.config.enabled {
             return;
         }

@@ -13,9 +13,9 @@
 //! OPERAND_STRING = (* balanced parens, stops at , ) ] *)
 //! ```
 
-use winnow::prelude::*;
 use winnow::combinator::{alt, delimited, repeat, separated, terminated};
-use winnow::token::{take_while, one_of, any};
+use winnow::prelude::*;
+use winnow::token::{any, one_of, take_while};
 
 use crate::rll::ast::{Branch, Instruction, Operand, RungContent, RungElement};
 use crate::rll::error::{RllError, RllResult};
@@ -27,7 +27,7 @@ use crate::rll::Rung;
 /// stored and the original text preserved.
 pub fn parse_rung(input: &str) -> Rung {
     let trimmed = input.trim();
-    
+
     if trimmed.is_empty() {
         return Rung::ok(input.to_string(), RungContent::new(Vec::new()));
     }
@@ -41,7 +41,7 @@ pub fn parse_rung(input: &str) -> Rung {
 /// Parse a rung strictly, returning an error on failure.
 pub fn parse_rung_strict(input: &str) -> RllResult<RungContent> {
     let mut input = input;
-    
+
     match rung_parser.parse_next(&mut input) {
         Ok(content) => Ok(content),
         Err(_) => {
@@ -49,9 +49,13 @@ pub fn parse_rung_strict(input: &str) -> RllResult<RungContent> {
             if !input.contains(';') {
                 Err(RllError::MissingTerminator)
             } else if input.matches('[').count() != input.matches(']').count() {
-                Err(RllError::UnclosedBracket { position: input.find('[').unwrap_or(0) })
+                Err(RllError::UnclosedBracket {
+                    position: input.find('[').unwrap_or(0),
+                })
             } else if input.matches('(').count() != input.matches(')').count() {
-                Err(RllError::UnclosedParen { position: input.find('(').unwrap_or(0) })
+                Err(RllError::UnclosedParen {
+                    position: input.find('(').unwrap_or(0),
+                })
             } else {
                 Err(RllError::UnexpectedEof)
             }
@@ -63,9 +67,10 @@ pub fn parse_rung_strict(input: &str) -> RllResult<RungContent> {
 fn rung_parser(input: &mut &str) -> ModalResult<RungContent> {
     let elements = terminated(
         repeat(0.., element_parser),
-        (take_while(0.., |c: char| c.is_whitespace()), ';')
-    ).parse_next(input)?;
-    
+        (take_while(0.., |c: char| c.is_whitespace()), ';'),
+    )
+    .parse_next(input)?;
+
     Ok(RungContent::new(elements))
 }
 
@@ -73,27 +78,28 @@ fn rung_parser(input: &mut &str) -> ModalResult<RungContent> {
 fn element_parser(input: &mut &str) -> ModalResult<RungElement> {
     // Skip optional whitespace before element
     let _ = take_while(0.., |c: char| c.is_whitespace()).parse_next(input)?;
-    
+
     alt((
         parallel_parser.map(RungElement::Parallel),
         instruction_parser.map(RungElement::Instruction),
-    )).parse_next(input)
+    ))
+    .parse_next(input)
 }
 
 /// Parse a parallel structure: [ branch (, branch)* ]
 fn parallel_parser(input: &mut &str) -> ModalResult<Vec<Branch>> {
     // Open bracket
     let _ = '['.parse_next(input)?;
-    
+
     // Parse branches separated by comma, allowing whitespace around comma
     let branches: Vec<Branch> = separated(1.., branch_parser, ws_comma_ws).parse_next(input)?;
-    
+
     // Skip trailing whitespace before close bracket
     let _ = take_while(0.., |c: char| c.is_whitespace()).parse_next(input)?;
-    
+
     // Close bracket
     let _ = ']'.parse_next(input)?;
-    
+
     Ok(branches)
 }
 
@@ -109,7 +115,7 @@ fn ws_comma_ws(input: &mut &str) -> ModalResult<()> {
 fn branch_parser(input: &mut &str) -> ModalResult<Branch> {
     // Skip leading whitespace
     let _ = take_while(0.., |c: char| c.is_whitespace()).parse_next(input)?;
-    
+
     let elements: Vec<RungElement> = repeat(1.., branch_element_parser).parse_next(input)?;
     Ok(Branch::new(elements))
 }
@@ -118,35 +124,35 @@ fn branch_parser(input: &mut &str) -> ModalResult<Branch> {
 fn branch_element_parser(input: &mut &str) -> ModalResult<RungElement> {
     // Skip optional whitespace
     let _ = take_while(0.., |c: char| c.is_whitespace()).parse_next(input)?;
-    
+
     // Peek to check if we're at end of branch
     if input.is_empty() || input.starts_with(',') || input.starts_with(']') {
-        return Err(winnow::error::ErrMode::Backtrack(winnow::error::ContextError::new()));
+        return Err(winnow::error::ErrMode::Backtrack(
+            winnow::error::ContextError::new(),
+        ));
     }
-    
+
     alt((
         parallel_parser.map(RungElement::Parallel),
         instruction_parser.map(RungElement::Instruction),
-    )).parse_next(input)
+    ))
+    .parse_next(input)
 }
 
 /// Parse an instruction: MNEMONIC "(" operand_list? ")"
 fn instruction_parser(input: &mut &str) -> ModalResult<Instruction> {
     let mnemonic = mnemonic_parser.parse_next(input)?;
-    let operands = delimited(
-        '(',
-        operand_list_parser,
-        ')'
-    ).parse_next(input)?;
-    
+    let operands = delimited('(', operand_list_parser, ')').parse_next(input)?;
+
     Ok(Instruction::new(mnemonic, operands))
 }
 
 /// Parse instruction mnemonic: [A-Za-z_][A-Za-z0-9_]*
 fn mnemonic_parser(input: &mut &str) -> ModalResult<String> {
     let first = one_of(|c: char| c.is_ascii_alphabetic() || c == '_').parse_next(input)?;
-    let rest: &str = take_while(0.., |c: char| c.is_ascii_alphanumeric() || c == '_').parse_next(input)?;
-    
+    let rest: &str =
+        take_while(0.., |c: char| c.is_ascii_alphanumeric() || c == '_').parse_next(input)?;
+
     let mut mnemonic = String::with_capacity(1 + rest.len());
     mnemonic.push(first);
     mnemonic.push_str(rest);
@@ -157,11 +163,11 @@ fn mnemonic_parser(input: &mut &str) -> ModalResult<String> {
 fn operand_list_parser(input: &mut &str) -> ModalResult<Vec<Operand>> {
     // Handle empty operand list
     let _ = take_while(0.., |c: char| c.is_whitespace()).parse_next(input)?;
-    
+
     if input.starts_with(')') {
         return Ok(Vec::new());
     }
-    
+
     separated(1.., operand_parser, ',').parse_next(input)
 }
 
@@ -169,19 +175,19 @@ fn operand_list_parser(input: &mut &str) -> ModalResult<Vec<Operand>> {
 fn operand_parser(input: &mut &str) -> ModalResult<Operand> {
     // Skip leading whitespace
     let _ = take_while(0.., |c: char| c.is_whitespace()).parse_next(input)?;
-    
+
     // Check for inferred operand
     if input.starts_with('?') {
         let _ = any.parse_next(input)?; // consume '?'
         return Ok(Operand::inferred());
     }
-    
+
     // Parse operand value (handles nested parens for expressions)
     let value = operand_value_parser.parse_next(input)?;
-    
+
     // Skip trailing whitespace
     let _ = take_while(0.., |c: char| c.is_whitespace()).parse_next(input)?;
-    
+
     Ok(Operand::value(value))
 }
 
@@ -190,10 +196,10 @@ fn operand_value_parser(input: &mut &str) -> ModalResult<String> {
     let mut result = String::new();
     let mut paren_depth = 0;
     let mut bracket_depth = 0;
-    
+
     while !input.is_empty() {
         let c = input.chars().next().unwrap();
-        
+
         match c {
             '(' => {
                 paren_depth += 1;
@@ -238,12 +244,14 @@ fn operand_value_parser(input: &mut &str) -> ModalResult<String> {
             }
         }
     }
-    
+
     let trimmed = result.trim().to_string();
     if trimmed.is_empty() {
-        return Err(winnow::error::ErrMode::Backtrack(winnow::error::ContextError::new()));
+        return Err(winnow::error::ErrMode::Backtrack(
+            winnow::error::ContextError::new(),
+        ));
     }
-    
+
     Ok(trimmed)
 }
 
@@ -257,7 +265,7 @@ mod tests {
         assert!(rung.is_parsed());
         let content = rung.content.unwrap();
         assert_eq!(content.elements.len(), 1);
-        
+
         if let RungElement::Instruction(instr) = &content.elements[0] {
             assert_eq!(instr.mnemonic, "NOP");
             assert!(instr.operands.is_empty());
@@ -272,7 +280,7 @@ mod tests {
         assert!(rung.is_parsed());
         let content = rung.content.unwrap();
         assert_eq!(content.elements.len(), 1);
-        
+
         if let RungElement::Instruction(instr) = &content.elements[0] {
             assert_eq!(instr.mnemonic, "XIC");
             assert_eq!(instr.operands.len(), 1);
@@ -295,7 +303,7 @@ mod tests {
         let rung = parse_rung("MOV(Source,Dest);");
         assert!(rung.is_parsed());
         let content = rung.content.unwrap();
-        
+
         if let RungElement::Instruction(instr) = &content.elements[0] {
             assert_eq!(instr.mnemonic, "MOV");
             assert_eq!(instr.operands.len(), 2);
@@ -311,7 +319,7 @@ mod tests {
         let rung = parse_rung("TON(Timer1,?,?);");
         assert!(rung.is_parsed());
         let content = rung.content.unwrap();
-        
+
         if let RungElement::Instruction(instr) = &content.elements[0] {
             assert_eq!(instr.mnemonic, "TON");
             assert_eq!(instr.operands.len(), 3);
@@ -329,14 +337,14 @@ mod tests {
         assert!(rung.is_parsed());
         let content = rung.content.unwrap();
         assert_eq!(content.elements.len(), 2);
-        
+
         // First element: XIC instruction
         if let RungElement::Instruction(instr) = &content.elements[0] {
             assert_eq!(instr.mnemonic, "XIC");
         } else {
             panic!("Expected instruction");
         }
-        
+
         // Second element: parallel branches
         if let RungElement::Parallel(branches) = &content.elements[1] {
             assert_eq!(branches.len(), 2);
@@ -357,7 +365,7 @@ mod tests {
     fn test_parse_structured_tag() {
         let rung = parse_rung("XIC(Timer1.DN)OTE(Motor.Run);");
         assert!(rung.is_parsed());
-        
+
         let refs = rung.tag_references();
         assert_eq!(refs.len(), 2);
         // Now extracts base tag names
@@ -371,7 +379,7 @@ mod tests {
     fn test_parse_array_access() {
         let rung = parse_rung("XIC(Data[0])MOV(Array[1],Array[2]);");
         assert!(rung.is_parsed());
-        
+
         let refs = rung.tag_references();
         // Now extracts base tag names only (indices are literals)
         assert_eq!(refs.len(), 3);
@@ -387,7 +395,7 @@ mod tests {
         let rung = parse_rung("CPT(Result,((1.0 - x) * y) + z);");
         assert!(rung.is_parsed());
         let content = rung.content.unwrap();
-        
+
         if let RungElement::Instruction(instr) = &content.elements[0] {
             assert_eq!(instr.mnemonic, "CPT");
             assert_eq!(instr.operands.len(), 2);
@@ -403,7 +411,7 @@ mod tests {
         let rung = parse_rung("XIC(First_Scan)[XIC(Run_Cmd) XIO(Run_Mode) OTL(Run_Mode) ,XIO(Run_Cmd) OTU(Run_Mode) ];");
         assert!(rung.is_parsed(), "Error: {:?}", rung.error);
         let content = rung.content.unwrap();
-        
+
         // Should have XIC instruction followed by parallel branches
         assert_eq!(content.elements.len(), 2);
     }
@@ -424,7 +432,7 @@ mod tests {
     #[test]
     fn test_permissive_missing_terminator() {
         use crate::rll::error::RllError;
-        
+
         let rung = parse_rung("XIC(Start)");
         // Permissive mode: returns error in rung.error but doesn't panic
         assert!(!rung.is_parsed());
@@ -436,10 +444,10 @@ mod tests {
     fn test_tag_extraction() {
         let rung = parse_rung("XIC(Start)XIC(Ready)[OTE(Motor),TON(Timer1,?,?)];");
         assert!(rung.is_parsed());
-        
+
         let refs = rung.tag_references();
         assert_eq!(refs.len(), 4);
-        
+
         let names: Vec<&str> = refs.iter().map(|r| r.name.as_str()).collect();
         assert!(names.contains(&"Start"));
         assert!(names.contains(&"Ready"));

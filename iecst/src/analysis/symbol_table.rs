@@ -1,7 +1,7 @@
 //! Symbol table for tracking declarations.
 
-use crate::Span;
 use crate::analysis::{Diagnostic, DiagnosticKind, Severity, Type};
+use crate::Span;
 use std::collections::HashMap;
 
 /// A symbol in the symbol table.
@@ -103,7 +103,7 @@ impl SymbolTable {
     /// Define a new symbol in the current scope.
     pub fn define(&mut self, symbol: Symbol) -> Result<(), Diagnostic> {
         let scope = &mut self.scopes[self.current];
-        
+
         // Check for duplicate in current scope
         if let Some(existing) = scope.symbols.get(&symbol.name) {
             return Err(Diagnostic {
@@ -115,7 +115,7 @@ impl SymbolTable {
                 severity: Severity::Error,
             });
         }
-        
+
         scope.symbols.insert(symbol.name.clone(), symbol);
         Ok(())
     }
@@ -123,21 +123,21 @@ impl SymbolTable {
     /// Look up a symbol by name, searching up the scope chain.
     pub fn lookup(&self, name: &str) -> Option<&Symbol> {
         let mut scope_idx = Some(self.current);
-        
+
         while let Some(idx) = scope_idx {
             if let Some(symbol) = self.scopes[idx].symbols.get(name) {
                 return Some(symbol);
             }
             scope_idx = self.scopes[idx].parent;
         }
-        
+
         None
     }
 
     /// Look up a symbol mutably.
     pub fn lookup_mut(&mut self, name: &str) -> Option<&mut Symbol> {
         let mut scope_idx = Some(self.current);
-        
+
         // Find which scope contains the symbol
         let target_scope = loop {
             match scope_idx {
@@ -150,7 +150,7 @@ impl SymbolTable {
                 None => break None,
             }
         };
-        
+
         target_scope.and_then(move |idx| self.scopes[idx].symbols.get_mut(name))
     }
 
@@ -171,14 +171,14 @@ impl SymbolTable {
     /// Check for unused variables and return diagnostics.
     pub fn check_unused(&self) -> Vec<Diagnostic> {
         let mut diagnostics = Vec::new();
-        
+
         for scope in &self.scopes {
             for symbol in scope.symbols.values() {
                 // Skip checking outputs and in/outs (they might be used externally)
                 if matches!(symbol.kind, SymbolKind::Output | SymbolKind::InOut) {
                     continue;
                 }
-                
+
                 if !symbol.used && symbol.kind == SymbolKind::Variable {
                     diagnostics.push(Diagnostic {
                         kind: DiagnosticKind::UnusedVariable {
@@ -188,7 +188,7 @@ impl SymbolTable {
                         severity: Severity::Warning,
                     });
                 }
-                
+
                 if !symbol.assigned && symbol.mutable && symbol.kind == SymbolKind::Variable {
                     diagnostics.push(Diagnostic {
                         kind: DiagnosticKind::UninitializedVariable {
@@ -200,7 +200,7 @@ impl SymbolTable {
                 }
             }
         }
-        
+
         diagnostics
     }
 
@@ -228,7 +228,7 @@ mod tests {
     #[test]
     fn test_define_and_lookup() {
         let mut table = SymbolTable::new();
-        
+
         let symbol = Symbol {
             name: "x".to_string(),
             kind: SymbolKind::Variable,
@@ -238,7 +238,7 @@ mod tests {
             used: false,
             assigned: false,
         };
-        
+
         assert!(table.define(symbol).is_ok());
         assert!(table.lookup("x").is_some());
         assert!(table.lookup("y").is_none());
@@ -247,40 +247,44 @@ mod tests {
     #[test]
     fn test_nested_scopes() {
         let mut table = SymbolTable::new();
-        
+
         // Define in global scope
-        table.define(Symbol {
-            name: "global_var".to_string(),
-            kind: SymbolKind::Variable,
-            type_info: None,
-            span: Span::new(0, 10),
-            mutable: true,
-            used: false,
-            assigned: true,
-        }).unwrap();
-        
+        table
+            .define(Symbol {
+                name: "global_var".to_string(),
+                kind: SymbolKind::Variable,
+                type_info: None,
+                span: Span::new(0, 10),
+                mutable: true,
+                used: false,
+                assigned: true,
+            })
+            .unwrap();
+
         // Enter new scope
         table.enter_scope("inner");
-        
+
         // Can still see global_var
         assert!(table.lookup("global_var").is_some());
-        
+
         // Define local var
-        table.define(Symbol {
-            name: "local_var".to_string(),
-            kind: SymbolKind::Variable,
-            type_info: None,
-            span: Span::new(20, 30),
-            mutable: true,
-            used: false,
-            assigned: true,
-        }).unwrap();
-        
+        table
+            .define(Symbol {
+                name: "local_var".to_string(),
+                kind: SymbolKind::Variable,
+                type_info: None,
+                span: Span::new(20, 30),
+                mutable: true,
+                used: false,
+                assigned: true,
+            })
+            .unwrap();
+
         assert!(table.lookup("local_var").is_some());
-        
+
         // Exit scope
         table.exit_scope();
-        
+
         // Can no longer see local_var from outer scope
         // (Note: our implementation keeps all scopes, but lookup starts from current)
         assert!(table.lookup("global_var").is_some());
@@ -289,7 +293,7 @@ mod tests {
     #[test]
     fn test_duplicate_definition() {
         let mut table = SymbolTable::new();
-        
+
         let symbol1 = Symbol {
             name: "x".to_string(),
             kind: SymbolKind::Variable,
@@ -299,7 +303,7 @@ mod tests {
             used: false,
             assigned: false,
         };
-        
+
         let symbol2 = Symbol {
             name: "x".to_string(),
             kind: SymbolKind::Variable,
@@ -309,7 +313,7 @@ mod tests {
             used: false,
             assigned: false,
         };
-        
+
         assert!(table.define(symbol1).is_ok());
         assert!(table.define(symbol2).is_err());
     }
@@ -317,27 +321,31 @@ mod tests {
     #[test]
     fn test_unused_detection() {
         let mut table = SymbolTable::new();
-        
-        table.define(Symbol {
-            name: "used_var".to_string(),
-            kind: SymbolKind::Variable,
-            type_info: None,
-            span: Span::new(0, 8),
-            mutable: true,
-            used: true,
-            assigned: true,
-        }).unwrap();
-        
-        table.define(Symbol {
-            name: "unused_var".to_string(),
-            kind: SymbolKind::Variable,
-            type_info: None,
-            span: Span::new(10, 20),
-            mutable: true,
-            used: false,
-            assigned: true,
-        }).unwrap();
-        
+
+        table
+            .define(Symbol {
+                name: "used_var".to_string(),
+                kind: SymbolKind::Variable,
+                type_info: None,
+                span: Span::new(0, 8),
+                mutable: true,
+                used: true,
+                assigned: true,
+            })
+            .unwrap();
+
+        table
+            .define(Symbol {
+                name: "unused_var".to_string(),
+                kind: SymbolKind::Variable,
+                type_info: None,
+                span: Span::new(10, 20),
+                mutable: true,
+                used: false,
+                assigned: true,
+            })
+            .unwrap();
+
         let diagnostics = table.check_unused();
         assert_eq!(diagnostics.len(), 1);
         assert!(matches!(

@@ -17,7 +17,7 @@ END_FUNCTION
     let mut parser = Parser::new(code);
     let result = parser.parse();
     assert!(result.is_ok(), "Failed to parse: {:?}", result.err());
-    
+
     let ast = result.unwrap();
     assert_eq!(ast.declarations.len(), 1);
 }
@@ -241,7 +241,7 @@ END_PROGRAM
     let mut parser = Parser::new(code);
     let result = parser.parse();
     assert!(result.is_ok(), "Failed to parse: {:?}", result.err());
-    
+
     let ast = result.unwrap();
     assert_eq!(ast.declarations.len(), 3);
 }

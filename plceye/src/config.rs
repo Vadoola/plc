@@ -5,8 +5,8 @@
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-use crate::{Error, Result};
 use crate::error::ConfigErrorKind;
+use crate::{Error, Result};
 
 /// Main configuration for the rule detector.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

@@ -34,7 +34,7 @@ use serde::{de::DeserializeOwned, Serialize};
 
 // Security validation and limits
 pub mod security;
-pub use security::{SecurityLimits, SecurityError, validate_xml};
+pub use security::{validate_xml, SecurityError, SecurityLimits};
 
 // RLL (Relay Ladder Logic) parser
 pub mod rll;
@@ -89,7 +89,7 @@ pub fn from_str_secure<T: DeserializeOwned>(
 pub enum SecureParseError {
     #[error("Security validation failed: {0}")]
     SecurityError(#[from] SecurityError),
-    
+
     #[error("XML parsing failed: {0}")]
     ParseError(quick_xml::DeError),
 }

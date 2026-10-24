@@ -9,9 +9,9 @@ use crate::config::RuleConfig;
 use crate::loader::LoadedProject;
 use crate::report::{Report, Severity};
 use crate::rules::{
-    ComplexityDetector, EmptyRoutinesDetector, NestingDetector,
-    UndefinedTagsDetector, UnusedAoisDetector, UnusedDataTypesDetector, UnusedTagsDetector,
-    PlcopenUnusedVarsDetector, PlcopenUndefinedVarsDetector, PlcopenEmptyPousDetector,
+    ComplexityDetector, EmptyRoutinesDetector, NestingDetector, PlcopenEmptyPousDetector,
+    PlcopenUndefinedVarsDetector, PlcopenUnusedVarsDetector, UndefinedTagsDetector,
+    UnusedAoisDetector, UnusedDataTypesDetector, UnusedTagsDetector,
 };
 use crate::Result;
 
@@ -62,32 +62,36 @@ impl RuleDetector {
         if let Some(ref controller) = project.l5x_controller {
             return self.analyze_controller(controller);
         }
-        
+
         if let Some(ref plcopen) = project.plcopen_project {
             return self.analyze_plcopen(plcopen, project.source_path.clone());
         }
-        
+
         // Unknown format
         Ok(Report::new())
     }
-    
+
     /// Analyze a PLCopen project.
-    fn analyze_plcopen(&self, project: &plcopen::Project, source_path: Option<String>) -> Result<Report> {
+    fn analyze_plcopen(
+        &self,
+        project: &plcopen::Project,
+        source_path: Option<String>,
+    ) -> Result<Report> {
         let analysis = analyze_plcopen_project(project);
-        
+
         let mut report = Report::new();
         report.source_file = source_path;
-        
+
         // Run PLCopen-specific detectors
         let unused_detector = PlcopenUnusedVarsDetector::new(&self.config.unused_tags);
         unused_detector.detect(&analysis, &mut report);
-        
+
         let undefined_detector = PlcopenUndefinedVarsDetector::new(&self.config.undefined_tags);
         undefined_detector.detect(&analysis, &mut report);
-        
+
         let empty_detector = PlcopenEmptyPousDetector::new(&self.config.empty_routines);
         empty_detector.detect(&analysis, &mut report);
-        
+
         Ok(report)
     }
 
@@ -141,18 +145,18 @@ impl RuleDetector {
             let analysis = analyze_controller(controller);
             return Ok(analysis.stats);
         }
-        
+
         // For non-L5X, return empty stats
         Ok(ParseStats::default())
     }
-    
+
     /// Get PLCopen statistics for a loaded project.
     pub fn get_plcopen_stats(&self, project: &LoadedProject) -> Result<PlcopenStats> {
         if let Some(ref plcopen) = project.plcopen_project {
             let analysis = analyze_plcopen_project(plcopen);
             return Ok(analysis.stats);
         }
-        
+
         Ok(PlcopenStats::default())
     }
 }
@@ -204,11 +208,11 @@ mod tests {
                 </Programs>
             </Controller>
         </RSLogix5000Content>"#;
-        
+
         let project = LoadedProject::from_str(xml, None).expect("Should parse");
         let detector = RuleDetector::new();
         let report = detector.analyze(&project).expect("Should analyze");
-        
+
         // Should detect unused tag
         assert!(!report.rules.is_empty());
     }
@@ -225,11 +229,11 @@ mod tests {
                 </pous>
             </types>
         </project>"#;
-        
+
         let project = LoadedProject::from_str(xml, None).expect("Should parse");
         let detector = RuleDetector::new();
         let report = detector.analyze(&project).expect("Should analyze");
-        
+
         // Should detect empty POU
         assert!(report.rules.iter().any(|s| s.identifier == "Main"));
     }

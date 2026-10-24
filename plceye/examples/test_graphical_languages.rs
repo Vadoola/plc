@@ -4,19 +4,16 @@ use plceye::analysis::analyze_plcopen_project;
 use std::fs;
 
 fn main() {
-    let file_path = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| {
-            eprintln!("Usage: cargo run --example test_graphical_languages <file.xml>");
-            std::process::exit(1);
-        });
+    let file_path = std::env::args().nth(1).unwrap_or_else(|| {
+        eprintln!("Usage: cargo run --example test_graphical_languages <file.xml>");
+        std::process::exit(1);
+    });
 
     println!("Analyzing: {}", file_path);
-    let xml_content = fs::read_to_string(&file_path)
-        .expect("Failed to read file");
+    let xml_content = fs::read_to_string(&file_path).expect("Failed to read file");
 
-    let project: plcopen::Root_project_Inline = quick_xml::de::from_str(&xml_content)
-        .expect("Failed to parse XML");
+    let project: plcopen::Root_project_Inline =
+        quick_xml::de::from_str(&xml_content).expect("Failed to parse XML");
 
     let analysis = analyze_plcopen_project(&project);
 
@@ -26,7 +23,8 @@ fn main() {
 
     println!("\n📊 Summary:");
     println!("   POUs: {}", analysis.stats.pous);
-    println!("   Bodies: ST={} FBD={} LD={} SFC={} IL={}", 
+    println!(
+        "   Bodies: ST={} FBD={} LD={} SFC={} IL={}",
         analysis.stats.st_bodies,
         analysis.stats.fbd_bodies,
         analysis.stats.ld_bodies,
@@ -58,7 +56,10 @@ fn main() {
     }
 
     println!("\n📈 Reference Extraction Results:");
-    println!("   ✓ Defined variables: {}", analysis.defined_variables.len());
+    println!(
+        "   ✓ Defined variables: {}",
+        analysis.defined_variables.len()
+    );
     println!("   ✓ Used variables: {}", analysis.used_variables.len());
     println!("   ✓ Called POUs: {}", analysis.used_pous.len());
 

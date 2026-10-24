@@ -7,7 +7,7 @@ use std::collections::HashSet;
 use l5x::Controller;
 
 use crate::config::UnusedDataTypesConfig;
-use crate::report::{Report, Severity, Rule, RuleKind};
+use crate::report::{Report, Rule, RuleKind, Severity};
 
 /// Detector for unused DataTypes.
 pub struct UnusedDataTypesDetector<'a> {
@@ -28,7 +28,7 @@ impl<'a> UnusedDataTypesDetector<'a> {
 
         // Collect defined user data types
         let defined_types = self.collect_defined_datatypes(controller);
-        
+
         // Collect all used data types (from tags, AOI parameters, etc.)
         let used_types = self.collect_used_datatypes(controller);
 

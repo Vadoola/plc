@@ -9,11 +9,10 @@ fn main() {
     }
 
     let filename = &args[1];
-    let content = fs::read_to_string(filename)
-        .unwrap_or_else(|e| {
-            eprintln!("Failed to read {}: {}", filename, e);
-            std::process::exit(1);
-        });
+    let content = fs::read_to_string(filename).unwrap_or_else(|e| {
+        eprintln!("Failed to read {}: {}", filename, e);
+        std::process::exit(1);
+    });
 
     match parse_scl(&content) {
         Ok(program) => {

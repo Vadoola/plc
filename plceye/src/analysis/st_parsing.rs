@@ -2,14 +2,10 @@
 //!
 //! Extract and parse ST routines from L5X structures.
 
-use l5x::{
-    AProgram, Routine,
-    STContent, STLine,
-    UDIDefinition,
-};
+use l5x::{AProgram, Routine, STContent, STLine, UDIDefinition};
 
-use super::iec61131_adapter::{Pou, parse_pou};
-use super::{STLocation, ParsedSTRoutine};
+use super::iec61131_adapter::{parse_pou, Pou};
+use super::{ParsedSTRoutine, STLocation};
 
 /// Extract the ST source code from an STLine element.
 fn extract_st_line_text(line: &STLine) -> String {
@@ -29,7 +25,8 @@ pub fn extract_st_source(st_content: &STContent) -> String {
     let mut lines: Vec<(u32, String)> = Vec::new();
 
     for line in &st_content.line {
-        let line_num: u32 = line.number
+        let line_num: u32 = line
+            .number
             .as_ref()
             .and_then(|n| n.parse().ok())
             .unwrap_or(0);
@@ -45,7 +42,11 @@ pub fn extract_st_source(st_content: &STContent) -> String {
 
     // Sort by line number and join
     lines.sort_by_key(|(n, _)| *n);
-    lines.into_iter().map(|(_, text)| text).collect::<Vec<_>>().join("\n")
+    lines
+        .into_iter()
+        .map(|(_, text)| text)
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// Parse an ST routine from a Routine element.
@@ -68,22 +69,18 @@ pub fn parse_st_routine(routine: &Routine, program: &str) -> Option<ParsedSTRout
     );
 
     match parse_pou(&wrapped_source) {
-        Ok(pou) => {
-            Some(ParsedSTRoutine {
-                location,
-                source,
-                pou: Some(pou),
-                parse_error: None,
-            })
-        }
-        Err(e) => {
-            Some(ParsedSTRoutine {
-                location,
-                source,
-                pou: None,
-                parse_error: Some(e),
-            })
-        }
+        Ok(pou) => Some(ParsedSTRoutine {
+            location,
+            source,
+            pou: Some(pou),
+            parse_error: None,
+        }),
+        Err(e) => Some(ParsedSTRoutine {
+            location,
+            source,
+            pou: None,
+            parse_error: Some(e),
+        }),
     }
 }
 
@@ -120,10 +117,10 @@ pub fn parse_st_routines_from_aoi(aoi: &UDIDefinition) -> Vec<ParsedSTRoutine> {
 
 /// Extract all function/FB call names from an ST POU.
 pub fn extract_st_call_names(pou: &Pou) -> Vec<String> {
-    use iec61131::{Statement, Expression, Variable};
-    
+    use iec61131::{Expression, Statement, Variable};
+
     let mut calls = Vec::new();
-    
+
     fn visit_var(var: &Variable, calls: &mut Vec<String>) {
         match var {
             Variable::MemberAccess { base, .. } => visit_var(base, calls),
@@ -137,11 +134,14 @@ pub fn extract_st_call_names(pou: &Pou) -> Vec<String> {
             _ => {}
         }
     }
-    
+
     fn visit_expr(expr: &Expression, calls: &mut Vec<String>) {
         use iec61131::Argument;
         match expr {
-            Expression::Call { function, arguments } => {
+            Expression::Call {
+                function,
+                arguments,
+            } => {
                 calls.push(function.clone());
                 for arg in arguments {
                     match arg {
@@ -167,7 +167,7 @@ pub fn extract_st_call_names(pou: &Pou) -> Vec<String> {
             _ => {}
         }
     }
-    
+
     fn visit_stmt(stmt: &Statement, calls: &mut Vec<String>) {
         use iec61131::Argument;
         match stmt {
@@ -175,44 +175,85 @@ pub fn extract_st_call_names(pou: &Pou) -> Vec<String> {
                 visit_var(target, calls);
                 visit_expr(value, calls);
             }
-            Statement::If { condition, then_body, elsif_parts, else_body, .. } => {
+            Statement::If {
+                condition,
+                then_body,
+                elsif_parts,
+                else_body,
+                ..
+            } => {
                 visit_expr(condition, calls);
-                for s in then_body { visit_stmt(s, calls); }
+                for s in then_body {
+                    visit_stmt(s, calls);
+                }
                 for (cond, body) in elsif_parts {
                     visit_expr(cond, calls);
-                    for s in body { visit_stmt(s, calls); }
+                    for s in body {
+                        visit_stmt(s, calls);
+                    }
                 }
                 if let Some(else_stmts) = else_body {
-                    for s in else_stmts { visit_stmt(s, calls); }
+                    for s in else_stmts {
+                        visit_stmt(s, calls);
+                    }
                 }
             }
-            Statement::Case { selector, cases, else_body, .. } => {
+            Statement::Case {
+                selector,
+                cases,
+                else_body,
+                ..
+            } => {
                 visit_expr(selector, calls);
                 for case in cases {
-                    for s in &case.body { visit_stmt(s, calls); }
+                    for s in &case.body {
+                        visit_stmt(s, calls);
+                    }
                 }
                 if let Some(else_stmts) = else_body {
-                    for s in else_stmts { visit_stmt(s, calls); }
+                    for s in else_stmts {
+                        visit_stmt(s, calls);
+                    }
                 }
             }
-            Statement::For { start, end, step, body, .. } => {
+            Statement::For {
+                start,
+                end,
+                step,
+                body,
+                ..
+            } => {
                 visit_expr(start, calls);
                 visit_expr(end, calls);
-                if let Some(step_expr) = step { visit_expr(step_expr, calls); }
-                for s in body { visit_stmt(s, calls); }
+                if let Some(step_expr) = step {
+                    visit_expr(step_expr, calls);
+                }
+                for s in body {
+                    visit_stmt(s, calls);
+                }
             }
-            Statement::While { condition, body, .. } => {
+            Statement::While {
+                condition, body, ..
+            } => {
                 visit_expr(condition, calls);
-                for s in body { visit_stmt(s, calls); }
+                for s in body {
+                    visit_stmt(s, calls);
+                }
             }
-            Statement::Repeat { body, condition, .. } => {
-                for s in body { visit_stmt(s, calls); }
+            Statement::Repeat {
+                body, condition, ..
+            } => {
+                for s in body {
+                    visit_stmt(s, calls);
+                }
                 visit_expr(condition, calls);
             }
             Statement::Return { value: Some(v), .. } => {
                 visit_expr(v, calls);
             }
-            Statement::FunctionCall { name, arguments, .. } => {
+            Statement::FunctionCall {
+                name, arguments, ..
+            } => {
                 calls.push(name.clone());
                 for arg in arguments {
                     match arg {
@@ -222,7 +263,11 @@ pub fn extract_st_call_names(pou: &Pou) -> Vec<String> {
                     }
                 }
             }
-            Statement::FbInvocation { instance, arguments, .. } => {
+            Statement::FbInvocation {
+                instance,
+                arguments,
+                ..
+            } => {
                 calls.push(instance.clone());
                 for arg in arguments {
                     match arg {
@@ -235,11 +280,11 @@ pub fn extract_st_call_names(pou: &Pou) -> Vec<String> {
             _ => {}
         }
     }
-    
+
     for stmt in &pou.body {
         visit_stmt(stmt, &mut calls);
     }
-    
+
     calls.sort();
     calls.dedup();
     calls

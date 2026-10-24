@@ -4,19 +4,16 @@ use plceye::analysis::analyze_plcopen_project;
 use std::fs;
 
 fn main() {
-    let file_path = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| {
-            eprintln!("Usage: cargo run --example test_st_il_extraction <file.xml>");
-            std::process::exit(1);
-        });
+    let file_path = std::env::args().nth(1).unwrap_or_else(|| {
+        eprintln!("Usage: cargo run --example test_st_il_extraction <file.xml>");
+        std::process::exit(1);
+    });
 
     println!("Analyzing: {}", file_path);
-    let xml_content = fs::read_to_string(&file_path)
-        .expect("Failed to read file");
+    let xml_content = fs::read_to_string(&file_path).expect("Failed to read file");
 
-    let project: plcopen::Root_project_Inline = quick_xml::de::from_str(&xml_content)
-        .expect("Failed to parse XML");
+    let project: plcopen::Root_project_Inline =
+        quick_xml::de::from_str(&xml_content).expect("Failed to parse XML");
 
     let analysis = analyze_plcopen_project(&project);
 
@@ -42,13 +39,30 @@ fn main() {
     println!("   Unused:  {}", analysis.unused_variables().len());
 
     // Show which variables came from text languages
-    let text_lang_vars: Vec<_> = analysis.used_variables.iter()
+    let text_lang_vars: Vec<_> = analysis
+        .used_variables
+        .iter()
         .filter(|v| {
             // These are typical keywords/variables from ST/IL code in the example
-            matches!(v.as_str(), 
-                "Collision" | "Gate" | "Pump" | "Speed" | "Brakes" | "Temp" |
-                "Control_State" | "Active" | "CLOSED" | "enable" |
-                "Hold" | "Square" | "result" | "return" | "by" | "Y1" | "ENO"
+            matches!(
+                v.as_str(),
+                "Collision"
+                    | "Gate"
+                    | "Pump"
+                    | "Speed"
+                    | "Brakes"
+                    | "Temp"
+                    | "Control_State"
+                    | "Active"
+                    | "CLOSED"
+                    | "enable"
+                    | "Hold"
+                    | "Square"
+                    | "result"
+                    | "return"
+                    | "by"
+                    | "Y1"
+                    | "ENO"
             )
         })
         .collect();

@@ -44,7 +44,6 @@ pub enum RuleKind {
     // =========================================================================
     // OPEN SOURCE RULES (detected by plceye)
     // =========================================================================
-
     /// S0001: Tag is defined but never used
     UnusedTag,
     /// S0002: Tag is used but never defined (might be external/aliased)
@@ -177,7 +176,7 @@ impl RuleKind {
             RuleKind::LargeArray => "X0010",
         }
     }
-    
+
     /// Get the rule name (e.g., "unused-tag").
     pub fn name(&self) -> &'static str {
         match self {

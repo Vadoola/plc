@@ -14,23 +14,24 @@ use walkdir::WalkDir;
 const XML_HEADER: &str = r#"<?xml version="1.0" encoding="UTF-8" standalone="yes"?>"#;
 
 fn test_file(path: &Path) -> Result<RoundtripResult, String> {
-    let original = fs::read_to_string(path)
-        .map_err(|e| format!("read error: {e}"))?;
+    let original = fs::read_to_string(path).map_err(|e| format!("read error: {e}"))?;
 
     // Step 1: parse
-    let project: Project = from_str(&original)
-        .map_err(|e| format!("parse error: {e}"))?;
+    let project: Project = from_str(&original).map_err(|e| format!("parse error: {e}"))?;
 
     // Step 2: serialize
-    let serialized = to_string(&project)
-        .map_err(|e| format!("serialize error: {e}"))?;
+    let serialized = to_string(&project).map_err(|e| format!("serialize error: {e}"))?;
 
     // Prepend XML declaration (quick-xml se doesn't add it automatically)
     let with_header = format!("{XML_HEADER}\n{serialized}");
 
     // Step 3: re-parse the serialized output
-    let reparsed: Project = from_str(&with_header)
-        .map_err(|e| format!("re-parse error: {e}\n--- serialized output (first 2000 chars) ---\n{}", &serialized[..serialized.len().min(2000)]))?;
+    let reparsed: Project = from_str(&with_header).map_err(|e| {
+        format!(
+            "re-parse error: {e}\n--- serialized output (first 2000 chars) ---\n{}",
+            &serialized[..serialized.len().min(2000)]
+        )
+    })?;
 
     // Step 4: compare key fields
     let issues = compare_projects(&project, &reparsed);
@@ -163,9 +164,18 @@ fn main() {
 fn print_result(r: &RoundtripResult) {
     let ratio = r.serialized_len as f64 / r.original_len as f64;
     if r.issues.is_empty() {
-        println!("[OK] {:.1}% size ({} -> {} bytes)", ratio * 100.0, r.original_len, r.serialized_len);
+        println!(
+            "[OK] {:.1}% size ({} -> {} bytes)",
+            ratio * 100.0,
+            r.original_len,
+            r.serialized_len
+        );
     } else {
-        println!("[WARN] {:.1}% size — {} field issue(s):", ratio * 100.0, r.issues.len());
+        println!(
+            "[WARN] {:.1}% size — {} field issue(s):",
+            ratio * 100.0,
+            r.issues.len()
+        );
         for issue in &r.issues {
             println!("       - {issue}");
         }

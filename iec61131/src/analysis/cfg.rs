@@ -4,7 +4,7 @@
 //! Each node is a basic block (straight-line code), and edges represent
 //! control flow (branches, loops, etc.).
 
-use crate::generated::ast::{Statement, Expression, BinaryOp};
+use crate::generated::ast::{BinaryOp, Expression, Statement};
 use std::collections::{HashMap, HashSet};
 
 /// Unique identifier for a CFG node.
@@ -99,12 +99,18 @@ pub struct Cfg {
 impl Cfg {
     /// Get successor nodes.
     pub fn successors(&self, node: NodeId) -> &[NodeId] {
-        self.successors.get(&node).map(|v| v.as_slice()).unwrap_or(&[])
+        self.successors
+            .get(&node)
+            .map(|v| v.as_slice())
+            .unwrap_or(&[])
     }
 
     /// Get predecessor nodes.
     pub fn predecessors(&self, node: NodeId) -> &[NodeId] {
-        self.predecessors.get(&node).map(|v| v.as_slice()).unwrap_or(&[])
+        self.predecessors
+            .get(&node)
+            .map(|v| v.as_slice())
+            .unwrap_or(&[])
     }
 
     /// Get a node by ID.
@@ -137,7 +143,9 @@ impl Cfg {
     /// This often matches the edge-based calculation and is
     /// easier to understand.
     pub fn cyclomatic_complexity_decisions(&self) -> usize {
-        let decision_points = self.nodes.iter()
+        let decision_points = self
+            .nodes
+            .iter()
             .filter(|n| matches!(n.kind, NodeKind::Branch | NodeKind::LoopHeader))
             .count();
         1 + decision_points
@@ -158,7 +166,8 @@ impl Cfg {
             }
         }
 
-        self.nodes.iter()
+        self.nodes
+            .iter()
             .map(|n| n.id)
             .filter(|id| !visited.contains(id))
             .collect()
@@ -204,8 +213,10 @@ impl Cfg {
                 NodeKind::Branch | NodeKind::LoopHeader => "diamond",
                 _ => "box",
             };
-            dot.push_str(&format!("    n{} [label=\"{}\" shape={}];\n", 
-                node.id.0, label, shape));
+            dot.push_str(&format!(
+                "    n{} [label=\"{}\" shape={}];\n",
+                node.id.0, label, shape
+            ));
         }
 
         // Edges
@@ -217,8 +228,10 @@ impl Cfg {
                 EdgeKind::Return => "color=purple",
                 _ => "",
             };
-            dot.push_str(&format!("    n{} -> n{} [{}];\n", 
-                edge.from.0, edge.to.0, style));
+            dot.push_str(&format!(
+                "    n{} -> n{} [{}];\n",
+                edge.from.0, edge.to.0, style
+            ));
         }
 
         dot.push_str("}\n");
@@ -261,10 +274,10 @@ impl CfgBuilder {
         } else {
             // Process statements
             let (first, last_nodes) = self.process_statements(statements, 0);
-            
+
             // Connect entry to first statement
             self.add_edge(entry, first, EdgeKind::Sequential);
-            
+
             // Connect all terminal nodes to exit
             for last in last_nodes {
                 self.add_edge(last, exit, EdgeKind::Sequential);
@@ -321,7 +334,11 @@ impl CfgBuilder {
 
     /// Process a list of statements.
     /// Returns (first_node, Vec<exit_nodes>).
-    fn process_statements(&mut self, stmts: &[Statement], start_index: usize) -> (NodeId, Vec<NodeId>) {
+    fn process_statements(
+        &mut self,
+        stmts: &[Statement],
+        start_index: usize,
+    ) -> (NodeId, Vec<NodeId>) {
         if stmts.is_empty() {
             let empty = self.create_node(NodeKind::Basic);
             return (empty, vec![empty]);
@@ -356,32 +373,35 @@ impl CfgBuilder {
 
     /// Process a single statement.
     /// Returns (node, exit_nodes, is_terminal).
-    fn process_statement(&mut self, stmt: &Statement, stmt_index: usize) -> (NodeId, Vec<NodeId>, bool) {
+    fn process_statement(
+        &mut self,
+        stmt: &Statement,
+        stmt_index: usize,
+    ) -> (NodeId, Vec<NodeId>, bool) {
         match stmt {
-            Statement::Assignment { .. } | Statement::FunctionCall { .. } | Statement::FbInvocation { .. } => {
+            Statement::Assignment { .. }
+            | Statement::FunctionCall { .. }
+            | Statement::FbInvocation { .. } => {
                 let node = self.create_basic_block(stmt_index);
                 (node, vec![node], false)
             }
 
-            Statement::If { then_body, elsif_parts, else_body, .. } => {
-                self.process_if(stmt_index, then_body, elsif_parts, else_body)
-            }
+            Statement::If {
+                then_body,
+                elsif_parts,
+                else_body,
+                ..
+            } => self.process_if(stmt_index, then_body, elsif_parts, else_body),
 
-            Statement::Case { cases, else_body, .. } => {
-                self.process_case(stmt_index, cases, else_body)
-            }
+            Statement::Case {
+                cases, else_body, ..
+            } => self.process_case(stmt_index, cases, else_body),
 
-            Statement::For { body, .. } => {
-                self.process_for(stmt_index, body)
-            }
+            Statement::For { body, .. } => self.process_for(stmt_index, body),
 
-            Statement::While { body, .. } => {
-                self.process_while(stmt_index, body)
-            }
+            Statement::While { body, .. } => self.process_while(stmt_index, body),
 
-            Statement::Repeat { body, .. } => {
-                self.process_repeat(stmt_index, body)
-            }
+            Statement::Repeat { body, .. } => self.process_repeat(stmt_index, body),
 
             Statement::Return { .. } => {
                 let node = self.create_basic_block(stmt_index);
@@ -418,7 +438,9 @@ impl CfgBuilder {
         else_body: &Option<Vec<Statement>>,
     ) -> (NodeId, Vec<NodeId>, bool) {
         let branch = self.create_node(NodeKind::Branch);
-        self.nodes[branch.0].statements.push(StmtRef { index: stmt_index });
+        self.nodes[branch.0]
+            .statements
+            .push(StmtRef { index: stmt_index });
 
         let mut all_exits = Vec::new();
 
@@ -486,7 +508,11 @@ impl CfgBuilder {
     }
 
     /// Process FOR loop.
-    fn process_for(&mut self, stmt_index: usize, body: &[Statement]) -> (NodeId, Vec<NodeId>, bool) {
+    fn process_for(
+        &mut self,
+        stmt_index: usize,
+        body: &[Statement],
+    ) -> (NodeId, Vec<NodeId>, bool) {
         let header = self.create_node(NodeKind::LoopHeader);
         let loop_exit = self.create_node(NodeKind::LoopExit);
 
@@ -495,7 +521,7 @@ impl CfgBuilder {
         self.loop_headers.push(header);
 
         let (body_first, body_exits) = self.process_statements(body, stmt_index + 1);
-        
+
         // Pop loop context
         self.loop_exits.pop();
         self.loop_headers.pop();
@@ -513,13 +539,21 @@ impl CfgBuilder {
     }
 
     /// Process WHILE loop.
-    fn process_while(&mut self, stmt_index: usize, body: &[Statement]) -> (NodeId, Vec<NodeId>, bool) {
+    fn process_while(
+        &mut self,
+        stmt_index: usize,
+        body: &[Statement],
+    ) -> (NodeId, Vec<NodeId>, bool) {
         // Same structure as FOR
         self.process_for(stmt_index, body)
     }
 
     /// Process REPEAT loop.
-    fn process_repeat(&mut self, stmt_index: usize, body: &[Statement]) -> (NodeId, Vec<NodeId>, bool) {
+    fn process_repeat(
+        &mut self,
+        stmt_index: usize,
+        body: &[Statement],
+    ) -> (NodeId, Vec<NodeId>, bool) {
         let body_start = self.create_node(NodeKind::Basic);
         let condition = self.create_node(NodeKind::LoopHeader);
         let loop_exit = self.create_node(NodeKind::LoopExit);
@@ -568,13 +602,16 @@ pub fn count_expression_decisions(expr: &Expression) -> usize {
         }
         Expression::Unary { operand, .. } => count_expression_decisions(operand),
         Expression::Parenthesized(inner) => count_expression_decisions(inner),
-        Expression::Call { arguments, .. } => {
-            arguments.iter().map(|arg| match arg {
+        Expression::Call { arguments, .. } => arguments
+            .iter()
+            .map(|arg| match arg {
                 crate::generated::ast::Argument::Positional(e) => count_expression_decisions(e),
-                crate::generated::ast::Argument::Named { value, .. } => count_expression_decisions(value),
+                crate::generated::ast::Argument::Named { value, .. } => {
+                    count_expression_decisions(value)
+                }
                 crate::generated::ast::Argument::Output { .. } => 0,
-            }).sum()
-        }
+            })
+            .sum(),
         _ => 0,
     }
 }
@@ -587,7 +624,7 @@ mod tests {
     fn test_cfg_simple_linear() {
         let stmts = vec![]; // Empty for now - will need parser integration
         let cfg = CfgBuilder::new().build(&stmts);
-        
+
         // Entry -> Exit for empty function
         assert_eq!(cfg.nodes.len(), 2);
         assert_eq!(cfg.edges.len(), 1);

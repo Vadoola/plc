@@ -47,9 +47,7 @@ impl<'a> NestingDetector<'a> {
                     st_routine.location.routine.clone(),
                     format!(
                         "Routine '{}' has nesting depth of {} (max: {})",
-                        st_routine.location.routine,
-                        depth,
-                        self.config.max_depth
+                        st_routine.location.routine, depth, self.config.max_depth
                     ),
                 ));
             }
@@ -122,7 +120,7 @@ fn glob_match_recursive(pattern: &[char], text: &[char], pi: usize, ti: usize) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::analysis::{ParsedSTRoutine, STLocation, ParseStats, RoutineSummary};
+    use crate::analysis::{ParseStats, ParsedSTRoutine, RoutineSummary, STLocation};
     use std::collections::HashMap;
 
     fn create_test_analysis(st_source: &str) -> ProjectAnalysis {
@@ -173,14 +171,17 @@ mod tests {
 
         detector.detect(&analysis, &mut report);
 
-        assert!(report.rules.is_empty(), "Shallow routine should not trigger nesting rule");
+        assert!(
+            report.rules.is_empty(),
+            "Shallow routine should not trigger nesting rule"
+        );
     }
 
     #[test]
     fn test_deep_routine_violation() {
         let config = NestingConfig {
             enabled: true,
-            max_depth: 2,  // Low threshold for testing
+            max_depth: 2, // Low threshold for testing
             ignore_patterns: vec![],
         };
         let detector = NestingDetector::new(&config);
@@ -195,7 +196,7 @@ mod tests {
                     END_IF;
                 END_IF;
             END_IF;
-            "#
+            "#,
         );
         let mut report = Report::new();
 
@@ -220,7 +221,10 @@ mod tests {
 
         detector.detect(&analysis, &mut report);
 
-        assert!(report.rules.is_empty(), "Disabled detector should not report");
+        assert!(
+            report.rules.is_empty(),
+            "Disabled detector should not report"
+        );
     }
 
     #[test]
@@ -237,7 +241,10 @@ mod tests {
 
         detector.detect(&analysis, &mut report);
 
-        assert!(report.rules.is_empty(), "Ignored routine should not be reported");
+        assert!(
+            report.rules.is_empty(),
+            "Ignored routine should not be reported"
+        );
     }
 
     #[test]
@@ -253,7 +260,7 @@ mod tests {
         // - Info: depth <= 6 (4 + 4/2)
         // - Warning: 6 < depth <= 8 (4 * 2)
         // - Error: depth > 8
-        
+
         // Mild violation: Info
         assert_eq!(detector.severity_for_depth(5), Severity::Info);
 
@@ -280,7 +287,7 @@ mod tests {
                     x := i + j;
                 END_FOR;
             END_FOR;
-            "#
+            "#,
         );
         let mut report = Report::new();
         detector.detect(&analysis, &mut report);
@@ -309,7 +316,7 @@ mod tests {
                     END_WHILE;
                 END_FOR;
             END_IF;
-            "#
+            "#,
         );
         let mut report = Report::new();
         detector.detect(&analysis, &mut report);
@@ -335,7 +342,7 @@ mod tests {
                         y := 1;
                     END_IF;
             END_CASE;
-            "#
+            "#,
         );
         let mut report = Report::new();
         detector.detect(&analysis, &mut report);
@@ -376,6 +383,9 @@ mod tests {
         let mut report = Report::new();
         detector.detect(&analysis, &mut report);
 
-        assert!(report.rules.is_empty(), "Unparseable routine should not trigger rule");
+        assert!(
+            report.rules.is_empty(),
+            "Unparseable routine should not trigger rule"
+        );
     }
 }

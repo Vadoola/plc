@@ -58,10 +58,16 @@ pub enum ExprKind {
     UnaryOp { op: UnaryOp, expr: Box<Expr> },
 
     /// Function call: func(args) with optional named parameters
-    FunctionCall { name: String, args: Vec<FunctionArg> },
+    FunctionCall {
+        name: String,
+        args: Vec<FunctionArg>,
+    },
 
     /// Array indexing: array[index]
-    ArrayIndex { array: Box<Expr>, indices: Vec<Expr> },
+    ArrayIndex {
+        array: Box<Expr>,
+        indices: Vec<Expr>,
+    },
 
     /// Member access: expr.member
     MemberAccess { expr: Box<Expr>, member: String },
@@ -164,7 +170,7 @@ pub enum SizePrefix {
 }
 
 /// Function/FB call argument (may be named).
-/// 
+///
 /// Supports Rockwell-specific empty arguments like `GSV(a, , b)` where
 /// the second argument is intentionally omitted.
 #[derive(Debug, Clone, PartialEq)]
@@ -265,7 +271,7 @@ pub enum CaseValue {
 }
 
 /// Argument in a function/FB call.
-/// 
+///
 /// Supports Rockwell-specific empty arguments like `GSV(a, , b)` where
 /// the second argument is intentionally omitted.
 #[derive(Debug, Clone, PartialEq)]
@@ -425,11 +431,7 @@ pub enum TypeDef {
     Enum { values: Vec<EnumValue> },
 
     /// Subrange
-    Subrange {
-        base: String,
-        low: Expr,
-        high: Expr,
-    },
+    Subrange { base: String, low: Expr, high: Expr },
 
     /// Array type
     Array {

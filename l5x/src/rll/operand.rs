@@ -53,7 +53,11 @@ impl TagPath {
     }
 
     /// Create a tag path with array indices
-    pub fn with_indices(base: impl Into<String>, full_path: impl Into<String>, indices: Vec<OperandValue>) -> Self {
+    pub fn with_indices(
+        base: impl Into<String>,
+        full_path: impl Into<String>,
+        indices: Vec<OperandValue>,
+    ) -> Self {
         Self {
             base: base.into(),
             full_path: full_path.into(),
@@ -118,7 +122,7 @@ impl OperandValue {
 /// Parse an operand string into a structured OperandValue.
 pub fn parse_operand_value(input: &str) -> OperandValue {
     let trimmed = input.trim();
-    
+
     if trimmed.is_empty() {
         return OperandValue::Literal(String::new());
     }
@@ -171,10 +175,10 @@ fn looks_like_expression(s: &str) -> bool {
     let mut paren_depth = 0;
     let mut bracket_depth = 0;
     let chars: Vec<char> = s.chars().collect();
-    
+
     // Track if we've seen a non-whitespace char to detect subtraction vs negative
     let mut seen_term = false;
-    
+
     for &c in chars.iter() {
         match c {
             '(' => paren_depth += 1,
@@ -203,19 +207,19 @@ fn looks_like_expression(s: &str) -> bool {
             }
         }
     }
-    
+
     false
 }
 
 /// Parse a tag path: `Tag`, `Tag.Member`, `Tag[0]`, `Tag[idx].Member`, `Local:1:I.Data`
-/// 
+///
 /// For Module I/O tags like `FlexIO:3:I.Pt01.Data`, the base is `FlexIO` (before first `:`)
 /// For indirect addressing like `Tag.[OtherTag]`, extracts both tags.
 fn parse_tag_path(input: &str) -> OperandValue {
     let mut chars = input.chars().peekable();
     let mut base = String::new();
     let mut indices = Vec::new();
-    
+
     // Parse base name - stop at first `.`, `[`, or `:`
     // For Module I/O like `FlexIO:3:I.Data`, base is just `FlexIO`
     while let Some(&c) = chars.peek() {
@@ -225,13 +229,13 @@ fn parse_tag_path(input: &str) -> OperandValue {
         base.push(c);
         chars.next();
     }
-    
+
     // Skip past any module address portion (`:slot:type`)
     // e.g., `FlexIO:3:I.Data` - skip `:3:I` part
     while let Some(&c) = chars.peek() {
         if c == ':' {
             chars.next(); // consume ':'
-            // Skip until next `:` or `.` or `[`
+                          // Skip until next `:` or `.` or `[`
             while let Some(&nc) = chars.peek() {
                 if nc == ':' || nc == '.' || nc == '[' {
                     break;
@@ -242,13 +246,13 @@ fn parse_tag_path(input: &str) -> OperandValue {
             break;
         }
     }
-    
+
     // Now parse array indices and handle indirect addressing
     while let Some(&c) = chars.peek() {
         if c == '[' {
             chars.next(); // consume '['
             let idx_str = collect_until_balanced(&mut chars, '[', ']');
-            
+
             // Check if this looks like a numeric index (could have commas for multi-dim)
             // If it starts with a letter or underscore, it's a tag reference
             let trimmed = idx_str.trim();
@@ -263,7 +267,7 @@ fn parse_tag_path(input: &str) -> OperandValue {
             }
         } else if c == '.' {
             chars.next(); // consume '.'
-            // Check for indirect addressing: `.[ ... ]`
+                          // Check for indirect addressing: `.[ ... ]`
             if let Some(&nc) = chars.peek() {
                 if nc == '[' {
                     chars.next(); // consume '['
@@ -278,7 +282,7 @@ fn parse_tag_path(input: &str) -> OperandValue {
             break;
         }
     }
-    
+
     OperandValue::Tag(TagPath::with_indices(base, input.to_string(), indices))
 }
 
@@ -294,13 +298,13 @@ fn extract_terms_from_expression(input: &str, terms: &mut Vec<OperandValue>) {
     let mut current = String::new();
     let mut paren_depth = 0;
     let mut bracket_depth = 0;
-    
+
     let chars: Vec<char> = input.chars().collect();
     let mut i = 0;
-    
+
     while i < chars.len() {
         let c = chars[i];
-        
+
         match c {
             '(' => {
                 paren_depth += 1;
@@ -351,7 +355,7 @@ fn extract_terms_from_expression(input: &str, terms: &mut Vec<OperandValue>) {
         }
         i += 1;
     }
-    
+
     // Don't forget the last term
     process_term(&current, terms);
 }
@@ -362,7 +366,7 @@ fn process_term(term: &str, terms: &mut Vec<OperandValue>) {
     if trimmed.is_empty() {
         return;
     }
-    
+
     // Check for function call pattern: `FUNC(args)`
     // Functions like ATN, SIN, COS, etc. contain tags in their arguments
     if let Some(paren_pos) = trimmed.find('(') {
@@ -388,10 +392,10 @@ fn process_term(term: &str, terms: &mut Vec<OperandValue>) {
             return;
         }
     }
-    
+
     // Strip outer parentheses and recurse
     let stripped = strip_outer_parens(trimmed);
-    
+
     // Check if the stripped content contains operators (needs further parsing)
     if looks_like_expression(stripped) {
         extract_terms_from_expression(stripped, terms);
@@ -409,11 +413,29 @@ fn process_term(term: &str, terms: &mut Vec<OperandValue>) {
 /// Check if a name is a known math/expression function.
 fn is_known_function(name: &str) -> bool {
     // Common Rockwell/IEC 61131-3 expression functions
-    matches!(name.to_uppercase().as_str(),
-        "ABS" | "SQRT" | "LN" | "LOG" | "EXP" |
-        "SIN" | "COS" | "TAN" | "ASN" | "ACS" | "ATN" |
-        "DEG" | "RAD" | "TRUNC" | "NOT" | "AND" | "OR" | "XOR" |
-        "MOD" | "FRD" | "TOD"
+    matches!(
+        name.to_uppercase().as_str(),
+        "ABS"
+            | "SQRT"
+            | "LN"
+            | "LOG"
+            | "EXP"
+            | "SIN"
+            | "COS"
+            | "TAN"
+            | "ASN"
+            | "ACS"
+            | "ATN"
+            | "DEG"
+            | "RAD"
+            | "TRUNC"
+            | "NOT"
+            | "AND"
+            | "OR"
+            | "XOR"
+            | "MOD"
+            | "FRD"
+            | "TOD"
     )
 }
 
@@ -423,7 +445,7 @@ fn split_args(args: &str) -> Vec<&str> {
     let mut start = 0;
     let mut paren_depth = 0;
     let mut bracket_depth = 0;
-    
+
     for (i, c) in args.char_indices() {
         match c {
             '(' => paren_depth += 1,
@@ -437,12 +459,12 @@ fn split_args(args: &str) -> Vec<&str> {
             _ => {}
         }
     }
-    
+
     // Don't forget the last argument
     if start < args.len() {
         result.push(&args[start..]);
     }
-    
+
     result
 }
 
@@ -451,7 +473,7 @@ fn strip_outer_parens(s: &str) -> &str {
     let trimmed = s.trim();
     if trimmed.starts_with('(') && trimmed.ends_with(')') {
         // Check if they're balanced
-        let inner = &trimmed[1..trimmed.len()-1];
+        let inner = &trimmed[1..trimmed.len() - 1];
         let mut depth = 0;
         for c in inner.chars() {
             match c {
@@ -473,10 +495,14 @@ fn strip_outer_parens(s: &str) -> &str {
 }
 
 /// Collect characters until we hit a balanced closing bracket.
-fn collect_until_balanced(chars: &mut std::iter::Peekable<std::str::Chars>, open: char, close: char) -> String {
+fn collect_until_balanced(
+    chars: &mut std::iter::Peekable<std::str::Chars>,
+    open: char,
+    close: char,
+) -> String {
     let mut result = String::new();
     let mut depth = 1;
-    
+
     while let Some(&c) = chars.peek() {
         if c == open {
             depth += 1;
@@ -490,7 +516,7 @@ fn collect_until_balanced(chars: &mut std::iter::Peekable<std::str::Chars>, open
         result.push(c);
         chars.next();
     }
-    
+
     result
 }
 
@@ -508,7 +534,7 @@ mod tests {
     fn test_parse_structured_tag() {
         let val = parse_operand_value("Timer1.DN");
         assert_eq!(val.all_tags(), vec!["Timer1"]);
-        
+
         if let OperandValue::Tag(path) = val {
             assert_eq!(path.base, "Timer1");
             assert_eq!(path.full_path, "Timer1.DN");
@@ -522,7 +548,7 @@ mod tests {
         // Module I/O tag: base is just the module name "Local"
         let val = parse_operand_value("Local:1:I.Data.0");
         assert_eq!(val.all_tags(), vec!["Local"]);
-        
+
         if let OperandValue::Tag(path) = val {
             assert_eq!(path.base, "Local");
             assert_eq!(path.full_path, "Local:1:I.Data.0");
@@ -577,9 +603,21 @@ mod tests {
     fn test_parse_expression() {
         let val = parse_operand_value("((1.0 - x) * y) + z");
         let tags = val.all_tags();
-        assert!(tags.contains(&"x".to_string()), "Expected 'x' in {:?}", tags);
-        assert!(tags.contains(&"y".to_string()), "Expected 'y' in {:?}", tags);
-        assert!(tags.contains(&"z".to_string()), "Expected 'z' in {:?}", tags);
+        assert!(
+            tags.contains(&"x".to_string()),
+            "Expected 'x' in {:?}",
+            tags
+        );
+        assert!(
+            tags.contains(&"y".to_string()),
+            "Expected 'y' in {:?}",
+            tags
+        );
+        assert!(
+            tags.contains(&"z".to_string()),
+            "Expected 'z' in {:?}",
+            tags
+        );
         assert_eq!(tags.len(), 3);
     }
 
@@ -594,7 +632,9 @@ mod tests {
     #[test]
     fn test_parse_complex_expression() {
         // From real L5X: ((SP_In[10]-SP_In[9])*SRun_Tmr[10].ACC/SRun_Tmr[10].PRE)+SP_In[9]
-        let val = parse_operand_value("((SP_In[10]-SP_In[9])*SRun_Tmr[10].ACC/SRun_Tmr[10].PRE)+SP_In[9]");
+        let val = parse_operand_value(
+            "((SP_In[10]-SP_In[9])*SRun_Tmr[10].ACC/SRun_Tmr[10].PRE)+SP_In[9]",
+        );
         let tags = val.all_tags();
         assert!(tags.contains(&"SP_In".to_string()));
         assert!(tags.contains(&"SRun_Tmr".to_string()));
@@ -626,8 +666,16 @@ mod tests {
         // Indirect addressing: Tag.[OtherTag.Member]
         let val = parse_operand_value("SimpleDint.[TestTag.IntMember]");
         let tags = val.all_tags();
-        assert!(tags.contains(&"SimpleDint".to_string()), "Expected SimpleDint in {:?}", tags);
-        assert!(tags.contains(&"TestTag".to_string()), "Expected TestTag in {:?}", tags);
+        assert!(
+            tags.contains(&"SimpleDint".to_string()),
+            "Expected SimpleDint in {:?}",
+            tags
+        );
+        assert!(
+            tags.contains(&"TestTag".to_string()),
+            "Expected TestTag in {:?}",
+            tags
+        );
     }
 
     #[test]
@@ -643,14 +691,22 @@ mod tests {
         // CMP expression with ATN function
         let val = parse_operand_value("ATN(_Test) > 1.0");
         let tags = val.all_tags();
-        assert!(tags.contains(&"_Test".to_string()), "Expected _Test in {:?}", tags);
+        assert!(
+            tags.contains(&"_Test".to_string()),
+            "Expected _Test in {:?}",
+            tags
+        );
     }
 
     #[test]
     fn test_sin_function_in_expression() {
         let val = parse_operand_value("SIN(Angle) + COS(Angle)");
         let tags = val.all_tags();
-        assert!(tags.contains(&"Angle".to_string()), "Expected Angle in {:?}", tags);
+        assert!(
+            tags.contains(&"Angle".to_string()),
+            "Expected Angle in {:?}",
+            tags
+        );
     }
 
     #[test]

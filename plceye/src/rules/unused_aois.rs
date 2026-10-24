@@ -6,7 +6,7 @@ use std::collections::HashSet;
 
 use crate::analysis::ProjectAnalysis;
 use crate::config::UnusedAoisConfig;
-use crate::report::{Report, Severity, Rule, RuleKind};
+use crate::report::{Report, Rule, RuleKind, Severity};
 
 /// Detector for unused AOIs.
 pub struct UnusedAoisDetector<'a> {
@@ -26,7 +26,11 @@ impl<'a> UnusedAoisDetector<'a> {
         }
 
         // Get all defined AOI names
-        let defined_aois: HashSet<&str> = analysis.aoi_definitions.iter().map(|s| s.as_str()).collect();
+        let defined_aois: HashSet<&str> = analysis
+            .aoi_definitions
+            .iter()
+            .map(|s| s.as_str())
+            .collect();
 
         // Get all called AOI names from analysis
         let called_aois: HashSet<&str> = analysis.aoi_usage.keys().map(|s| s.as_str()).collect();
@@ -104,7 +108,7 @@ fn glob_match_recursive(pattern: &[char], text: &[char], pi: usize, ti: usize) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::analysis::{ProjectAnalysis, AoiReference, AoiCallSource, ParseStats};
+    use crate::analysis::{AoiCallSource, AoiReference, ParseStats, ProjectAnalysis};
 
     #[test]
     fn test_detects_unused_aoi() {
@@ -112,7 +116,7 @@ mod tests {
             enabled: true,
             ignore_patterns: vec![],
         };
-        
+
         let mut analysis = ProjectAnalysis {
             rungs: vec![],
             st_routines: vec![],
@@ -124,7 +128,7 @@ mod tests {
             aoi_usage: Default::default(),
             stats: ParseStats::default(),
         };
-        
+
         // Add a call to UsedAOI
         analysis.aoi_usage.insert(
             "UsedAOI".to_string(),
@@ -136,11 +140,11 @@ mod tests {
                 source: AoiCallSource::Rll,
             }],
         );
-        
+
         let detector = UnusedAoisDetector::new(&config);
         let mut report = Report::new();
         detector.detect(&analysis, &mut report);
-        
+
         assert_eq!(report.rules.len(), 1);
         assert_eq!(report.rules[0].kind, RuleKind::UnusedAoi);
         assert!(report.rules[0].message.contains("UnusedAOI"));
@@ -152,7 +156,7 @@ mod tests {
             enabled: true,
             ignore_patterns: vec!["Test_*".to_string()],
         };
-        
+
         let analysis = ProjectAnalysis {
             rungs: vec![],
             st_routines: vec![],
@@ -164,11 +168,11 @@ mod tests {
             aoi_usage: Default::default(),
             stats: ParseStats::default(),
         };
-        
+
         let detector = UnusedAoisDetector::new(&config);
         let mut report = Report::new();
         detector.detect(&analysis, &mut report);
-        
+
         assert_eq!(report.rules.len(), 0);
     }
 

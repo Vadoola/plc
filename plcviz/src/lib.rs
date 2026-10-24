@@ -45,10 +45,10 @@
 
 pub mod config;
 pub mod graph;
-pub mod svg;
 pub mod plcopen_graph;
+pub mod svg;
 
 // Re-export main types
-pub use config::{GraphType, VizConfig, ElementFilter, NodeStyle, NodeStyles};
-pub use graph::{L5xGraph, L5xNode, L5xNodeType, L5xEdge};
+pub use config::{ElementFilter, GraphType, NodeStyle, NodeStyles, VizConfig};
+pub use graph::{L5xEdge, L5xGraph, L5xNode, L5xNodeType};
 pub use plcopen_graph::{PlcopenGraphBuilder, PlcopenGraphType};

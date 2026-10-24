@@ -53,11 +53,13 @@ mod span;
 
 pub use ast::*;
 pub use error::{ParseError, ParseErrorKind, ParseResult};
-pub use parser::{parse_expression, parse_statement, parse_statements, parse_pou, parse_type_block};
+pub use parser::{
+    parse_expression, parse_pou, parse_statement, parse_statements, parse_type_block,
+};
 pub use security::{ParserLimits, ParserState, SecurityError};
 pub use span::Span;
 
 // Re-export key analysis types
+pub use analysis::max_nesting_depth;
 pub use analysis::{analyze_pou, Diagnostic, DiagnosticKind, Severity, Type};
 pub use analysis::{Cfg, CfgBuilder, CfgNode, NodeId, NodeKind};
-pub use analysis::max_nesting_depth;

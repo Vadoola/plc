@@ -3,7 +3,7 @@ use std::fs;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
-    
+
     if args.len() < 2 {
         eprintln!("Usage: {} <scl_file>", args[0]);
         eprintln!("\nExample:");
@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(program) => {
             println!("✓ Successfully parsed!");
             println!("  Blocks: {}", program.blocks.len());
-            
+
             for block in &program.blocks {
                 match block {
                     plcscl::Block::FunctionBlock(fb) => {

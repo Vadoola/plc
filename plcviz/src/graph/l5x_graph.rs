@@ -72,9 +72,9 @@ impl L5xNodeType {
     /// Get corner radius for this node type
     pub fn corner_radius(&self) -> usize {
         match self {
-            L5xNodeType::Aoi => 12,  // More rounded for AOIs
-            L5xNodeType::Tag => 2,   // Slight rounding
-            _ => 4,                  // Default
+            L5xNodeType::Aoi => 12, // More rounded for AOIs
+            L5xNodeType::Tag => 2,  // Slight rounding
+            _ => 4,                 // Default
         }
     }
 }
@@ -187,17 +187,16 @@ impl L5xGraph {
         // Add nodes to the visual graph
         for node in &self.nodes {
             let shape = ShapeKind::Box(node.label.clone());
-            
+
             // Use node-type-specific colors
             let mut look = StyleAttr::simple();
             look.fill_color = Some(layout::core::color::Color::new(
-                node.node_type.fill_color() << 8 | 0xFF
+                node.node_type.fill_color() << 8 | 0xFF,
             ));
-            look.line_color = layout::core::color::Color::new(
-                node.node_type.stroke_color() << 8 | 0xFF
-            );
+            look.line_color =
+                layout::core::color::Color::new(node.node_type.stroke_color() << 8 | 0xFF);
             look.rounded = node.node_type.corner_radius();
-            
+
             // Calculate width based on text length (approx 9px per char + padding)
             let text_width = (node.label.len() as f64) * 9.0 + 40.0;
             let width = text_width.clamp(80.0, 350.0); // min 80, max 350

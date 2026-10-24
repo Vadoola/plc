@@ -56,18 +56,17 @@ pub fn extract_st_from_xml(xml: &str) -> Option<String> {
     // Find <ST> element and extract content
     let st_start = xml.find("<ST>")?;
     let st_end = xml.find("</ST>")?;
-    
+
     if st_end <= st_start {
         return None;
     }
-    
+
     let st_content = &xml[st_start + 4..st_end];
-    
+
     // Extract CDATA content, handling both formats:
     // PLCopen TC6: <xhtml:p><![CDATA[...]]></xhtml:p>
     // IEC 61131-10: <![CDATA[...]]> or direct text
-    extract_cdata_content(st_content)
-        .or_else(|| extract_text_content(st_content))
+    extract_cdata_content(st_content).or_else(|| extract_text_content(st_content))
 }
 
 /// Extract all ST code blocks from a PLCopen XML document.
@@ -75,20 +74,20 @@ pub fn extract_st_from_xml(xml: &str) -> Option<String> {
 /// Returns a vector of (pou_name, st_code) tuples for each POU that contains ST.
 pub fn extract_all_st_from_xml(xml: &str) -> Vec<(String, String)> {
     let mut results = Vec::new();
-    
+
     // Simple regex-free parsing: find all <pou name="..."> and their ST bodies
     let mut pos = 0;
     while let Some(pou_start) = xml[pos..].find("<pou ") {
         let pou_start = pos + pou_start;
-        
+
         // Find pou end
         let pou_end = match xml[pou_start..].find("</pou>") {
             Some(end) => pou_start + end + 6,
             None => break,
         };
-        
+
         let pou_xml = &xml[pou_start..pou_end];
-        
+
         // Extract pou name
         if let Some(name) = extract_attribute(pou_xml, "name") {
             // Extract ST from this POU
@@ -98,10 +97,10 @@ pub fn extract_all_st_from_xml(xml: &str) -> Vec<(String, String)> {
                 }
             }
         }
-        
+
         pos = pou_end;
     }
-    
+
     results
 }
 
@@ -158,7 +157,7 @@ impl StAnalysisResult {
     pub fn is_ok(&self) -> bool {
         self.compilation_unit.is_some()
     }
-    
+
     /// Check if there are any errors (parse or diagnostic).
     pub fn has_errors(&self) -> bool {
         self.parse_error.is_some()
@@ -170,26 +169,29 @@ impl StAnalysisResult {
 fn extract_cdata_content(s: &str) -> Option<String> {
     let cdata_start = s.find("<![CDATA[")?;
     let cdata_end = s.find("]]>")?;
-    
+
     if cdata_end <= cdata_start {
         return None;
     }
-    
+
     Some(s[cdata_start + 9..cdata_end].to_string())
 }
 
 fn extract_text_content(s: &str) -> Option<String> {
     // Strip any XML tags and get inner text
-    let text: String = s.chars()
-        .fold((String::new(), false), |(mut acc, in_tag), c| {
-            match c {
-                '<' => (acc, true),
-                '>' => (acc, false),
-                _ if !in_tag => { acc.push(c); (acc, false) },
-                _ => (acc, in_tag),
+    let text: String = s
+        .chars()
+        .fold((String::new(), false), |(mut acc, in_tag), c| match c {
+            '<' => (acc, true),
+            '>' => (acc, false),
+            _ if !in_tag => {
+                acc.push(c);
+                (acc, false)
             }
-        }).0;
-    
+            _ => (acc, in_tag),
+        })
+        .0;
+
     let trimmed = text.trim();
     if trimmed.is_empty() {
         None
@@ -203,7 +205,7 @@ fn extract_attribute(xml: &str, attr_name: &str) -> Option<String> {
     let start = xml.find(&pattern)?;
     let value_start = start + pattern.len();
     let value_end = xml[value_start..].find('"')?;
-    
+
     Some(xml[value_start..value_start + value_end].to_string())
 }
 
@@ -251,7 +253,8 @@ END_IF;]]></xhtml:p></ST></body>"#;
 
     #[test]
     fn test_parse_st_if() {
-        let code = "FUNCTION Test : INT\n  IF x > 0 THEN y := 1; END_IF;\n  Test := y;\nEND_FUNCTION";
+        let code =
+            "FUNCTION Test : INT\n  IF x > 0 THEN y := 1; END_IF;\n  Test := y;\nEND_FUNCTION";
         let result = parse_st(code);
         assert!(result.is_ok());
     }
@@ -276,7 +279,7 @@ END_IF;]]></xhtml:p></ST></body>"#;
             </pou>
         </project>
         "#;
-        
+
         let results = extract_all_st_from_xml(xml);
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].0, "Main");

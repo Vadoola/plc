@@ -84,24 +84,24 @@ impl Style {
 
     pub fn to_svg_attrs(&self) -> String {
         let mut attrs = Vec::new();
-        
+
         if let Some(ref fill) = self.fill {
             attrs.push(format!("fill=\"{}\"", fill.to_svg()));
         }
-        
+
         if let Some(ref stroke) = self.stroke {
             attrs.push(format!("stroke=\"{}\"", stroke.to_svg()));
             attrs.push(format!("stroke-width=\"{}\"", self.stroke_width));
         }
-        
+
         if let Some(ref font) = self.font_family {
             attrs.push(format!("font-family=\"{}\"", font));
         }
-        
+
         if let Some(size) = self.font_size {
             attrs.push(format!("font-size=\"{}\"", size));
         }
-        
+
         attrs.join(" ")
     }
 }

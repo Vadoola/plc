@@ -110,7 +110,9 @@ impl ParseError {
 
         // Error indicator
         let indicator_padding = " ".repeat(gutter.len() + col.saturating_sub(1));
-        let indicator_len = (self.span.end - self.span.start).max(1).min(line_text.len() - col + 1);
+        let indicator_len = (self.span.end - self.span.start)
+            .max(1)
+            .min(line_text.len() - col + 1);
         result.push_str(&indicator_padding);
         result.push_str(&"^".repeat(indicator_len));
         result.push('\n');
@@ -164,10 +166,12 @@ mod tests {
     fn test_error_format() {
         let source = "x := 1 + ;\ny := 2;";
         let err = ParseError::new(
-            ParseErrorKind::UnexpectedToken { expected: "expression" },
+            ParseErrorKind::UnexpectedToken {
+                expected: "expression",
+            },
             Span::new(9, 10),
         );
-        
+
         let formatted = err.format_with_source(source);
         assert!(formatted.contains("unexpected token"));
         assert!(formatted.contains("expected expression"));
@@ -179,9 +183,8 @@ mod tests {
     fn test_error_kinds() {
         let err = ParseErrorKind::MissingEndKeyword { keyword: "END_IF" };
         assert_eq!(format!("{}", err), "missing END_IF");
-        
+
         let err = ParseErrorKind::UnclosedParen;
         assert_eq!(format!("{}", err), "unclosed parenthesis");
     }
 }
-

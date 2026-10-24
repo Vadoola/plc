@@ -3,7 +3,7 @@
 //! This module bridges between iec61131's compilation-unit based parsing
 //! and the routine-level parsing expected by plceye.
 
-use iec61131::{Parser, ParseError as Iec61131ParseError, PouDeclaration, StatementList};
+use iec61131::{ParseError as Iec61131ParseError, Parser, PouDeclaration, StatementList};
 
 /// Parse error for iec61131
 pub type ParseError = Iec61131ParseError;
@@ -24,7 +24,7 @@ pub struct Pou {
 pub fn parse_pou(source: &str) -> Result<Pou, ParseError> {
     let mut parser = Parser::new(source);
     let cu = parser.parse()?;
-    
+
     // Extract the first POU
     if let Some(decl) = cu.declarations.first() {
         match decl {

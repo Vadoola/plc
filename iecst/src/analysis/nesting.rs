@@ -58,7 +58,9 @@ fn calculate_depth(statements: &[Stmt], current_depth: usize) -> usize {
                 branch_max
             }
 
-            StmtKind::Case { cases, else_body, .. } => {
+            StmtKind::Case {
+                cases, else_body, ..
+            } => {
                 let nested = current_depth + 1;
                 let mut branch_max = nested;
 
@@ -73,17 +75,11 @@ fn calculate_depth(statements: &[Stmt], current_depth: usize) -> usize {
                 branch_max
             }
 
-            StmtKind::For { body, .. } => {
-                calculate_depth(body, current_depth + 1)
-            }
+            StmtKind::For { body, .. } => calculate_depth(body, current_depth + 1),
 
-            StmtKind::While { body, .. } => {
-                calculate_depth(body, current_depth + 1)
-            }
+            StmtKind::While { body, .. } => calculate_depth(body, current_depth + 1),
 
-            StmtKind::Repeat { body, .. } => {
-                calculate_depth(body, current_depth + 1)
-            }
+            StmtKind::Repeat { body, .. } => calculate_depth(body, current_depth + 1),
 
             // Non-nesting statements
             StmtKind::Assignment { .. }

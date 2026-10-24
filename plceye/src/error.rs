@@ -18,15 +18,11 @@ pub enum Error {
 
     /// Failed to parse L5X file
     #[error("Failed to parse L5X file: {kind}")]
-    L5xParse {
-        kind: L5xParseErrorKind,
-    },
+    L5xParse { kind: L5xParseErrorKind },
 
     /// Failed to parse config file
     #[error("Failed to parse config file: {kind}")]
-    ConfigParse {
-        kind: ConfigErrorKind,
-    },
+    ConfigParse { kind: ConfigErrorKind },
 }
 
 /// Kinds of L5X parse errors.
@@ -42,7 +38,9 @@ impl std::fmt::Display for L5xParseErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             L5xParseErrorKind::XmlDeserialize => write!(f, "XML deserialization failed"),
-            L5xParseErrorKind::MissingElement(elem) => write!(f, "missing required element: {}", elem),
+            L5xParseErrorKind::MissingElement(elem) => {
+                write!(f, "missing required element: {}", elem)
+            }
         }
     }
 }

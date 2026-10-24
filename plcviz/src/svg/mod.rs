@@ -8,4 +8,4 @@ mod style;
 
 pub use builder::SvgBuilder;
 pub use elements::*;
-pub use style::{Style, Color};
+pub use style::{Color, Style};

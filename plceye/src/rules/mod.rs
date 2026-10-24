@@ -20,7 +20,5 @@ pub use unused_tags::UnusedTagsDetector;
 
 // PLCopen-specific detectors
 pub use plcopen_rules::{
-    PlcopenUnusedVarsDetector,
-    PlcopenUndefinedVarsDetector,
-    PlcopenEmptyPousDetector,
+    PlcopenEmptyPousDetector, PlcopenUndefinedVarsDetector, PlcopenUnusedVarsDetector,
 };

@@ -29,12 +29,12 @@ impl SecurityLimits {
     /// Balanced limits suitable for most industrial projects
     pub fn balanced() -> Self {
         SecurityLimits {
-            max_file_size: 100 * 1024 * 1024,       // 100 MB
+            max_file_size: 100 * 1024 * 1024, // 100 MB
             max_element_depth: 256,
             max_attributes_per_element: 100,
-            max_attribute_length: 1024 * 1024,      // 1 MB
-            max_text_length: 10 * 1024 * 1024,      // 10 MB
-            max_total_elements: 1_000_000,          // 1M elements
+            max_attribute_length: 1024 * 1024, // 1 MB
+            max_text_length: 10 * 1024 * 1024, // 10 MB
+            max_total_elements: 1_000_000,     // 1M elements
             max_pous: 10_000,
         }
     }
@@ -42,12 +42,12 @@ impl SecurityLimits {
     /// Strict limits for untrusted/external XML files
     pub fn strict() -> Self {
         SecurityLimits {
-            max_file_size: 10 * 1024 * 1024,        // 10 MB
+            max_file_size: 10 * 1024 * 1024, // 10 MB
             max_element_depth: 64,
             max_attributes_per_element: 50,
-            max_attribute_length: 64 * 1024,        // 64 KB
-            max_text_length: 1024 * 1024,           // 1 MB
-            max_total_elements: 100_000,            // 100K elements
+            max_attribute_length: 64 * 1024, // 64 KB
+            max_text_length: 1024 * 1024,    // 1 MB
+            max_total_elements: 100_000,     // 100K elements
             max_pous: 1_000,
         }
     }
@@ -55,7 +55,7 @@ impl SecurityLimits {
     /// Relaxed limits for trusted internal projects
     pub fn relaxed() -> Self {
         SecurityLimits {
-            max_file_size: 1024 * 1024 * 1024,      // 1 GB
+            max_file_size: 1024 * 1024 * 1024, // 1 GB
             max_element_depth: 1024,
             max_attributes_per_element: 500,
             max_attribute_length: 10 * 1024 * 1024, // 10 MB
@@ -71,28 +71,28 @@ impl SecurityLimits {
 pub enum SecurityError {
     #[error("XML file too large: {size} bytes > {limit} bytes")]
     FileTooLarge { size: usize, limit: usize },
-    
+
     #[error("XML element nesting too deep: {depth} > {limit}")]
     NestingTooDeep { depth: usize, limit: usize },
-    
+
     #[error("Too many attributes: {count} > {limit}")]
     TooManyAttributes { count: usize, limit: usize },
-    
+
     #[error("Attribute value too long: {length} bytes > {limit} bytes")]
     AttributeTooLong { length: usize, limit: usize },
-    
+
     #[error("Text content too long: {length} bytes > {limit} bytes")]
     TextTooLong { length: usize, limit: usize },
-    
+
     #[error("Too many XML elements: {count} > {limit}")]
     TooManyElements { count: usize, limit: usize },
-    
+
     #[error("Too many POUs: {count} > {limit}")]
     TooManyPous { count: usize, limit: usize },
-    
+
     #[error("Potential XML bomb detected")]
     XmlBomb,
-    
+
     #[error("Potential billion laughs attack detected")]
     BillionLaughs,
 }

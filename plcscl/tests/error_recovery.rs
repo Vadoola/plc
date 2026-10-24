@@ -1,5 +1,5 @@
 //! Tests for parser error recovery.
-//! 
+//!
 //! NOTE: Error recovery is not yet implemented in the parser.
 //! These tests are commented out until error recovery support is added.
 
@@ -26,14 +26,14 @@ END_FUNCTION_BLOCK
 
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer).unwrap().with_error_recovery();
-    
+
     let result = parser.parse();
     assert!(result.is_ok());
-    
+
     let ast = result.unwrap();
     assert_eq!(ast.blocks.len(), 1);
     assert_eq!(ast.blocks[0].name, "Test");
-    
+
     // Should have at least 2 statements parsed (x := 10 and x := 30)
     assert!(ast.blocks[0].body.len() >= 2, "Expected at least 2 statements, got {}", ast.blocks[0].body.len());
 }
@@ -55,13 +55,13 @@ END_FUNCTION_BLOCK
 
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer).unwrap().with_error_recovery();
-    
+
     let result = parser.parse();
     assert!(result.is_ok());
-    
+
     let ast = result.unwrap();
     assert_eq!(ast.blocks.len(), 1);
-    
+
     // Should have parsed at least some variables
     let var_count: usize = ast.blocks[0].variables.iter()
         .map(|s| s.variables.len())
@@ -100,14 +100,14 @@ END_FUNCTION_BLOCK
 
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer).unwrap().with_error_recovery();
-    
+
     let result = parser.parse();
     assert!(result.is_ok());
-    
+
     let ast = result.unwrap();
     // Should parse all 3 blocks even with errors in one
     assert!(ast.blocks.len() >= 2, "Expected at least 2 blocks, got {}", ast.blocks.len());
-    
+
     // Should have collected errors
     assert!(!parser.errors.is_empty(), "Expected errors to be collected");
 }
@@ -131,13 +131,13 @@ END_FUNCTION_BLOCK
 
     let lexer = Lexer::new(source);
     let mut parser = Parser::new(lexer).unwrap().with_error_recovery();
-    
+
     let result = parser.parse();
     assert!(result.is_ok());
-    
+
     let ast = result.unwrap();
     assert_eq!(ast.blocks.len(), 1);
-    
+
     // Parser should have collected errors but produced an AST
     if !parser.errors.is_empty() {
         println!("Errors found (expected): {:?}", parser.errors);

@@ -58,10 +58,7 @@ impl SvgRenderer {
             r#"<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}" viewBox="0 0 {} {}">
 "#,
-            self.width as u32,
-            self.height as u32,
-            self.width as u32,
-            self.height as u32
+            self.width as u32, self.height as u32, self.width as u32, self.height as u32
         ));
 
         // Defs for arrow markers
@@ -84,8 +81,10 @@ impl SvgRenderer {
         );
 
         // Background
-        svg.push_str(r##"<rect width="100%" height="100%" fill="#fafafa"/>
-"##);
+        svg.push_str(
+            r##"<rect width="100%" height="100%" fill="#fafafa"/>
+"##,
+        );
 
         // Content
         svg.push_str(&self.content);
@@ -258,8 +257,19 @@ impl RenderBackend for SvgRenderer {
         } else {
             // Default: black solid
             let stroke = Self::color_to_svg(&look.line_color);
-            let dash = if dashed { r#" stroke-dasharray="5,3""# } else { "" };
-            return self.draw_arrow_with_style(path, &stroke, dash, head.1, "arrowhead", look.line_width);
+            let dash = if dashed {
+                r#" stroke-dasharray="5,3""#
+            } else {
+                ""
+            };
+            return self.draw_arrow_with_style(
+                path,
+                &stroke,
+                dash,
+                head.1,
+                "arrowhead",
+                look.line_width,
+            );
         };
 
         self.draw_arrow_with_style(path, stroke, dash, head.1, marker_id, look.line_width);

@@ -143,9 +143,7 @@ pub enum TypeSpec {
         element_type: Box<TypeSpec>,
     },
     /// Structure type
-    Struct {
-        fields: Vec<StructField>,
-    },
+    Struct { fields: Vec<StructField> },
     /// Reference type
     Ref(Box<TypeSpec>),
     /// User-defined type
@@ -278,7 +276,10 @@ pub enum Statement {
     /// CONTINUE
     Continue { span: Span },
     /// RETURN
-    Return { value: Option<Expression>, span: Span },
+    Return {
+        value: Option<Expression>,
+        span: Span,
+    },
     /// Function call
     FunctionCall {
         name: String,

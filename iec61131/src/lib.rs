@@ -41,7 +41,7 @@
 //! - ✅ Namespaces and using directives
 //! - ✅ Detailed error reporting with source locations
 //! - ✅ Security limits to prevent DoS attacks
-//! 
+//!
 //! ## Security
 //!
 //! For untrusted input, use security limits to prevent denial-of-service attacks:
@@ -50,20 +50,20 @@
 //! use iec61131::{Parser, security::ParserLimits};
 //!
 //! let input = "FUNCTION Test : INT\n  VAR x : INT; END_VAR\n  Test := x;\nEND_FUNCTION";
-//! 
+//!
 //! // Use strict limits for untrusted input
 //! let limits = ParserLimits::strict();
 //! // Check input size before parsing
 //! if input.len() > limits.max_input_size {
 //!     panic!("Input too large");
 //! }
-//! 
+//!
 //! let mut parser = Parser::new(input);
 //! let ast = parser.parse()?;
 //! # Ok::<(), iec61131::ParseError>(())
 //! ```
-//! 
-//! 
+//!
+//!
 //! ## Analysis Features
 //!
 //! This crate now includes static analysis features previously available in iecst:
@@ -81,10 +81,10 @@
 //!     Example := y;
 //! END_FUNCTION
 //! "#;
-//! 
+//!
 //! let mut parser = Parser::new(code);
 //! let cu = parser.parse().unwrap();
-//! 
+//!
 //! // Extract function body and analyze
 //! if let Some(iec61131::PouDeclaration::Function(func)) = cu.declarations.first() {
 //!     let cfg = CfgBuilder::new().build(&func.body);
@@ -104,13 +104,13 @@ pub mod analysis;
 
 // Re-export the main types
 pub use generated::ast::{
-    CompilationUnit, PouDeclaration, FunctionDecl, FunctionBlockDecl, ProgramDecl, ClassDecl,
-    InterfaceDecl, MethodDecl, Statement, Expression, VarDecl, TypeSpec,
-    Variable, Argument, StatementList, BinaryOp, UnaryOp, Literal,
+    Argument, BinaryOp, ClassDecl, CompilationUnit, Expression, FunctionBlockDecl, FunctionDecl,
+    InterfaceDecl, Literal, MethodDecl, PouDeclaration, ProgramDecl, Statement, StatementList,
+    TypeSpec, UnaryOp, VarDecl, Variable,
 };
 
-pub use generated::lexer::{Token, Lexer, Span};
-pub use generated::parser::{Parser, ParseError};
+pub use generated::lexer::{Lexer, Span, Token};
+pub use generated::parser::{ParseError, Parser};
 
 // Re-export security types
 pub use security::{ParserLimits, ParserState, SecurityError};
@@ -181,4 +181,3 @@ END_PROGRAM
         assert!(result.is_ok(), "Failed to parse: {:?}", result.err());
     }
 }
-

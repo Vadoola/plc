@@ -116,7 +116,10 @@ impl Text {
         };
         format!(
             "<text x=\"{}\" y=\"{}\" text-anchor=\"{}\"{}>{}</text>",
-            self.x, self.y, anchor_str, style_part,
+            self.x,
+            self.y,
+            anchor_str,
+            style_part,
             xml_escape(&self.content)
         )
     }
@@ -286,7 +289,10 @@ impl Polyline {
             Some(id) => format!(" marker-end=\"url(#{})\"", id),
             None => String::new(),
         };
-        format!("<polyline points=\"{}\"{}{}/>", points_str, style_part, marker_part)
+        format!(
+            "<polyline points=\"{}\"{}{}/>",
+            points_str, style_part, marker_part
+        )
     }
 }
 

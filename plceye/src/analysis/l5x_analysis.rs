@@ -5,17 +5,13 @@
 
 use std::collections::{HashMap, HashSet};
 
-use l5x::rll::{Rung as ParsedRung, TagReference, ErrorContext, ParseError};
-use l5x::{
-    Controller,
-    UDIDefinition,
-};
+use l5x::rll::{ErrorContext, ParseError, Rung as ParsedRung, TagReference};
+use l5x::{Controller, UDIDefinition};
 
 use super::iec61131_adapter::Pou;
 use super::rll_parsing::parse_routine;
 use super::st_parsing::{
-    parse_st_routines_from_program, parse_st_routines_from_aoi,
-    extract_st_call_names,
+    extract_st_call_names, parse_st_routines_from_aoi, parse_st_routines_from_program,
 };
 
 /// Location of a rung within a project.
@@ -39,7 +35,10 @@ impl RungLocation {
     }
 
     pub fn path(&self) -> String {
-        format!("{}/{}/Rung#{}", self.program, self.routine, self.rung_number)
+        format!(
+            "{}/{}/Rung#{}",
+            self.program, self.routine, self.rung_number
+        )
     }
 }
 
@@ -234,7 +233,10 @@ impl ProjectAnalysis {
     /// Get all references to a specific tag.
     pub fn references_to(&self, tag_name: &str) -> Vec<&LocatedTagReference> {
         if let Some(indices) = self.tag_xref.get(tag_name) {
-            indices.iter().filter_map(|&i| self.tag_references.get(i)).collect()
+            indices
+                .iter()
+                .filter_map(|&i| self.tag_references.get(i))
+                .collect()
         } else {
             Vec::new()
         }
@@ -249,12 +251,17 @@ impl ProjectAnalysis {
 
     /// Get routine summary by name.
     pub fn get_routine(&self, program: &str, routine: &str) -> Option<&RoutineSummary> {
-        self.routines.iter().find(|r| r.program == program && r.routine == routine)
+        self.routines
+            .iter()
+            .find(|r| r.program == program && r.routine == routine)
     }
 
     /// Get all RLL parse errors.
     pub fn parse_errors(&self) -> Vec<ParseError> {
-        self.rungs.iter().filter_map(|rung| rung.parse_error()).collect()
+        self.rungs
+            .iter()
+            .filter_map(|rung| rung.parse_error())
+            .collect()
     }
 
     /// Get unused AOIs.
@@ -262,7 +269,10 @@ impl ProjectAnalysis {
         self.aoi_definitions
             .iter()
             .filter(|name| {
-                self.aoi_usage.get(*name).map(|refs| refs.is_empty()).unwrap_or(true)
+                self.aoi_usage
+                    .get(*name)
+                    .map(|refs| refs.is_empty())
+                    .unwrap_or(true)
             })
             .map(|s| s.as_str())
             .collect()
@@ -321,7 +331,9 @@ pub fn analyze_controller(controller: &Controller) -> ProjectAnalysis {
                         if rung.parsed.is_parsed() {
                             for tag_ref in rung.tag_references() {
                                 routine_tags.push(tag_ref.reference.name.clone());
-                                *routine_instructions.entry(tag_ref.reference.instruction.clone()).or_insert(0) += 1;
+                                *routine_instructions
+                                    .entry(tag_ref.reference.instruction.clone())
+                                    .or_insert(0) += 1;
                             }
                         } else {
                             parse_errors += 1;
@@ -384,7 +396,9 @@ pub fn analyze_controller(controller: &Controller) -> ProjectAnalysis {
                 let tag_name = tag_ref.reference.name.clone();
                 let instruction = tag_ref.reference.instruction.clone();
 
-                if aoi_name_set.contains(instruction.as_str()) && !rung_aoi_calls.contains(&instruction) {
+                if aoi_name_set.contains(instruction.as_str())
+                    && !rung_aoi_calls.contains(&instruction)
+                {
                     rung_aoi_calls.insert(instruction.clone());
                     aoi_usage
                         .entry(instruction.clone())
@@ -447,23 +461,24 @@ pub fn analyze_controller(controller: &Controller) -> ProjectAnalysis {
     // Calculate complexity metrics for ST routines
     let mut complexities: Vec<usize> = Vec::new();
     let mut nestings: Vec<usize> = Vec::new();
-    
+
     for st_routine in &st_routines {
         if let Some(ref pou) = st_routine.pou {
             let cfg = iec61131::analysis::CfgBuilder::new().build(&pou.body);
             let complexity = cfg.cyclomatic_complexity();
             let nesting = iec61131::analysis::max_nesting_depth(&pou.body);
-            
+
             complexities.push(complexity);
             nestings.push(nesting);
         }
     }
-    
+
     if !complexities.is_empty() {
         stats.st_max_complexity = *complexities.iter().max().unwrap_or(&0);
-        stats.st_avg_complexity = complexities.iter().sum::<usize>() as f32 / complexities.len() as f32;
+        stats.st_avg_complexity =
+            complexities.iter().sum::<usize>() as f32 / complexities.len() as f32;
     }
-    
+
     if !nestings.is_empty() {
         stats.st_max_nesting = *nestings.iter().max().unwrap_or(&0);
         stats.st_avg_nesting = nestings.iter().sum::<usize>() as f32 / nestings.len() as f32;
@@ -524,14 +539,18 @@ mod tests {
         "#;
         let wrapped = format!("PROGRAM Test\nVAR\nEND_VAR\n{}\nEND_PROGRAM", code);
         let pou = crate::analysis::parse_pou(&wrapped).unwrap();
-        
+
         // Calculate complexity
         let cfg = iec61131::analysis::CfgBuilder::new().build(&pou.body);
         let complexity = cfg.cyclomatic_complexity();
         let nesting = iec61131::analysis::max_nesting_depth(&pou.body);
-        
+
         // Verify expected values
-        assert!(complexity >= 3, "Expected complexity >= 3, got {}", complexity);
+        assert!(
+            complexity >= 3,
+            "Expected complexity >= 3, got {}",
+            complexity
+        );
         assert_eq!(nesting, 2, "Expected nesting depth 2, got {}", nesting);
     }
 }

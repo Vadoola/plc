@@ -48,9 +48,7 @@ impl<'a> ComplexityDetector<'a> {
                     st_routine.location.routine.clone(),
                     format!(
                         "Routine '{}' has cyclomatic complexity of {} (max: {})",
-                        st_routine.location.routine,
-                        complexity,
-                        self.config.max_complexity
+                        st_routine.location.routine, complexity, self.config.max_complexity
                     ),
                 ));
             }
@@ -123,7 +121,7 @@ fn glob_match_recursive(pattern: &[char], text: &[char], pi: usize, ti: usize) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::analysis::{ParsedSTRoutine, STLocation, ParseStats, RoutineSummary};
+    use crate::analysis::{ParseStats, ParsedSTRoutine, RoutineSummary, STLocation};
     use std::collections::HashMap;
 
     fn create_test_analysis(st_source: &str) -> ProjectAnalysis {
@@ -174,14 +172,17 @@ mod tests {
 
         detector.detect(&analysis, &mut report);
 
-        assert!(report.rules.is_empty(), "Simple routine should not trigger complexity rule");
+        assert!(
+            report.rules.is_empty(),
+            "Simple routine should not trigger complexity rule"
+        );
     }
 
     #[test]
     fn test_complex_routine_violation() {
         let config = ComplexityConfig {
             enabled: true,
-            max_complexity: 2,  // Very low threshold for testing
+            max_complexity: 2, // Very low threshold for testing
             ignore_patterns: vec![],
         };
         let detector = ComplexityDetector::new(&config);
@@ -196,7 +197,7 @@ mod tests {
             ELSIF c THEN
                 x := 3;
             END_IF;
-            "#
+            "#,
         );
         let mut report = Report::new();
 
@@ -221,7 +222,10 @@ mod tests {
 
         detector.detect(&analysis, &mut report);
 
-        assert!(report.rules.is_empty(), "Disabled detector should not report");
+        assert!(
+            report.rules.is_empty(),
+            "Disabled detector should not report"
+        );
     }
 
     #[test]
@@ -238,7 +242,10 @@ mod tests {
 
         detector.detect(&analysis, &mut report);
 
-        assert!(report.rules.is_empty(), "Ignored routine should not be reported");
+        assert!(
+            report.rules.is_empty(),
+            "Ignored routine should not be reported"
+        );
     }
 
     #[test]
@@ -254,7 +261,7 @@ mod tests {
         // - Info: complexity <= 15 (10 + 10/2)
         // - Warning: 15 < complexity <= 20 (10 * 2)
         // - Error: complexity > 20
-        
+
         // Mild violation: Info
         assert_eq!(detector.severity_for_complexity(12), Severity::Info);
 
@@ -280,7 +287,7 @@ mod tests {
             FOR i := 1 TO 10 DO
                 x := x + 1;
             END_FOR;
-            "#
+            "#,
         );
         let mut report = Report::new();
         detector.detect(&analysis, &mut report);
@@ -321,7 +328,7 @@ mod tests {
                 2: y := 2;
                 3: y := 3;
             END_CASE;
-            "#
+            "#,
         );
         let mut report = Report::new();
         detector.detect(&analysis, &mut report);
@@ -361,6 +368,9 @@ mod tests {
         let mut report = Report::new();
         detector.detect(&analysis, &mut report);
 
-        assert!(report.rules.is_empty(), "Unparseable routine should not trigger rule");
+        assert!(
+            report.rules.is_empty(),
+            "Unparseable routine should not trigger rule"
+        );
     }
 }

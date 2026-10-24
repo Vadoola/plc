@@ -85,16 +85,19 @@ mod tests {
     #[test]
     fn test_simple_svg() {
         let mut builder = SvgBuilder::new(200.0, 100.0);
-        
-        let rect = Rect::new(10.0, 10.0, 80.0, 40.0)
-            .style(Style::default().fill(Color::LIGHT_GRAY).stroke(Color::BLACK));
+
+        let rect = Rect::new(10.0, 10.0, 80.0, 40.0).style(
+            Style::default()
+                .fill(Color::LIGHT_GRAY)
+                .stroke(Color::BLACK),
+        );
         builder.add(rect.to_svg());
-        
+
         let text = Text::new(50.0, 35.0, "Hello")
             .anchor(TextAnchor::Middle)
             .style(Style::default().font("Arial", 14.0));
         builder.add(text.to_svg());
-        
+
         let svg = builder.build();
         assert!(svg.contains("<svg"));
         assert!(svg.contains("</svg>"));

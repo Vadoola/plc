@@ -4,19 +4,16 @@ use plceye::analysis::{analyze_plcopen_project, PlcopenAnalysis};
 use std::fs;
 
 fn main() {
-    let file_path = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| {
-            eprintln!("Usage: cargo run --example test_fbd_analysis <file.xml>");
-            std::process::exit(1);
-        });
+    let file_path = std::env::args().nth(1).unwrap_or_else(|| {
+        eprintln!("Usage: cargo run --example test_fbd_analysis <file.xml>");
+        std::process::exit(1);
+    });
 
     println!("Analyzing: {}", file_path);
-    let xml_content = fs::read_to_string(&file_path)
-        .expect("Failed to read file");
+    let xml_content = fs::read_to_string(&file_path).expect("Failed to read file");
 
-    let project: plcopen::Root_project_Inline = quick_xml::de::from_str(&xml_content)
-        .expect("Failed to parse XML");
+    let project: plcopen::Root_project_Inline =
+        quick_xml::de::from_str(&xml_content).expect("Failed to parse XML");
 
     let analysis = analyze_plcopen_project(&project);
 

@@ -31,10 +31,13 @@ impl<'a> Parser<'a> {
             use crate::security::SecurityError;
             use crate::Span;
             return Err(ParseError::new(
-                ParseErrorKind::Security(SecurityError::InputTooLarge {
-                    size: input.len(),
-                    limit: limits.max_input_size,
-                }.to_string()),
+                ParseErrorKind::Security(
+                    SecurityError::InputTooLarge {
+                        size: input.len(),
+                        limit: limits.max_input_size,
+                    }
+                    .to_string(),
+                ),
                 Span::empty(),
             ));
         }
@@ -328,17 +331,14 @@ impl<'a> Parser<'a> {
                 let span = tok.span.merge(&end);
                 Ok(Expr::new(ExprKind::Paren(Box::new(inner)), span))
             }
-            _ => Err(ParseError::new(
-                ParseErrorKind::InvalidExpression,
-                tok.span,
-            )),
+            _ => Err(ParseError::new(ParseErrorKind::InvalidExpression, tok.span)),
         }
     }
 
     /// Parse a direct address string like "%IX0.0" or "%MW100".
     fn parse_direct_address(&self, addr: &str) -> ParseResult<DirectAddress> {
         let mut chars = addr.chars().peekable();
-        
+
         // Skip the '%'
         if chars.next() != Some('%') {
             return Err(ParseError::new(
@@ -346,32 +346,49 @@ impl<'a> Parser<'a> {
                 self.previous.span,
             ));
         }
-        
+
         // Parse location prefix (I, Q, M)
         let location = match chars.next() {
             Some('I') | Some('i') => LocationPrefix::Input,
             Some('Q') | Some('q') => LocationPrefix::Output,
             Some('M') | Some('m') => LocationPrefix::Memory,
-            _ => return Err(ParseError::new(
-                ParseErrorKind::InvalidDirectAddress,
-                self.previous.span,
-            )),
+            _ => {
+                return Err(ParseError::new(
+                    ParseErrorKind::InvalidDirectAddress,
+                    self.previous.span,
+                ))
+            }
         };
-        
+
         // Parse optional size prefix (X, B, W, D, L)
         let (size, address_start) = match chars.peek() {
-            Some('X') | Some('x') => { chars.next(); (SizePrefix::Bit, true) }
-            Some('B') | Some('b') => { chars.next(); (SizePrefix::Byte, true) }
-            Some('W') | Some('w') => { chars.next(); (SizePrefix::Word, true) }
-            Some('D') | Some('d') => { chars.next(); (SizePrefix::DoubleWord, true) }
-            Some('L') | Some('l') => { chars.next(); (SizePrefix::LongWord, true) }
+            Some('X') | Some('x') => {
+                chars.next();
+                (SizePrefix::Bit, true)
+            }
+            Some('B') | Some('b') => {
+                chars.next();
+                (SizePrefix::Byte, true)
+            }
+            Some('W') | Some('w') => {
+                chars.next();
+                (SizePrefix::Word, true)
+            }
+            Some('D') | Some('d') => {
+                chars.next();
+                (SizePrefix::DoubleWord, true)
+            }
+            Some('L') | Some('l') => {
+                chars.next();
+                (SizePrefix::LongWord, true)
+            }
             _ => (SizePrefix::Bit, false), // Default to bit if no size prefix
         };
         let _ = address_start; // silence warning
-        
+
         // Rest is the address
         let address: String = chars.collect();
-        
+
         Ok(DirectAddress {
             location,
             size,
@@ -408,12 +425,12 @@ impl<'a> Parser<'a> {
     /// Parse a single function argument (may be named).
     fn parse_function_arg(&mut self) -> ParseResult<FunctionArg> {
         let start = self.current.span;
-        
+
         // Check for named argument: ident := expr
         if let Token::Ident(name) = &self.current.token {
             let name = name.clone();
             let name_span = self.current.span;
-            
+
             // Peek ahead to see if this is a named argument
             self.advance();
             if self.eat(&Token::Assign) {
@@ -429,7 +446,7 @@ impl<'a> Parser<'a> {
                 // Not a named argument, backtrack
                 // We already consumed the identifier, so create an Ident expression
                 let ident_expr = Expr::new(ExprKind::Ident(name), name_span);
-                
+
                 // Continue parsing as expression from this point
                 let value = self.continue_expression_from(ident_expr)?;
                 let span = start.merge(&value.span);
@@ -440,7 +457,7 @@ impl<'a> Parser<'a> {
                 });
             }
         }
-        
+
         // Regular positional argument
         let value = self.parse_expression()?;
         let span = start.merge(&value.span);
@@ -455,7 +472,7 @@ impl<'a> Parser<'a> {
     fn continue_expression_from(&mut self, left: Expr) -> ParseResult<Expr> {
         // Continue with postfix operations
         let mut expr = left;
-        
+
         loop {
             if self.eat(&Token::LParen) {
                 // Function call
@@ -632,7 +649,13 @@ impl<'a> Parser<'a> {
                     value: arg.value,
                 })
                 .collect();
-            return Ok(Stmt::new(StmtKind::Call { name, args: call_args }, span));
+            return Ok(Stmt::new(
+                StmtKind::Call {
+                    name,
+                    args: call_args,
+                },
+                span,
+            ));
         }
 
         Err(ParseError::new(
@@ -676,21 +699,13 @@ impl<'a> Parser<'a> {
         let condition = self.parse_expression()?;
         self.expect(&Token::Then, "THEN")?;
 
-        let then_body = self.parse_statements_until(&[
-            Token::Elsif,
-            Token::Else,
-            Token::EndIf,
-        ])?;
+        let then_body = self.parse_statements_until(&[Token::Elsif, Token::Else, Token::EndIf])?;
 
         let mut elsif_branches = Vec::new();
         while self.eat(&Token::Elsif) {
             let cond = self.parse_expression()?;
             self.expect(&Token::Then, "THEN")?;
-            let body = self.parse_statements_until(&[
-                Token::Elsif,
-                Token::Else,
-                Token::EndIf,
-            ])?;
+            let body = self.parse_statements_until(&[Token::Elsif, Token::Else, Token::EndIf])?;
             elsif_branches.push((cond, body));
         }
 
@@ -1216,7 +1231,11 @@ impl<'a> Parser<'a> {
         self.eat(&Token::Semicolon);
 
         let span = start.merge(&self.previous.span);
-        Ok(TypeDecl { name, definition, span })
+        Ok(TypeDecl {
+            name,
+            definition,
+            span,
+        })
     }
 
     /// Parse a type definition (the right side of a type declaration).
@@ -1348,7 +1367,13 @@ mod tests {
         // Should be 1 + (2 * 3), not (1 + 2) * 3
         if let ExprKind::BinaryOp { op, right, .. } = &expr.kind {
             assert_eq!(*op, BinaryOp::Add);
-            assert!(matches!(right.kind, ExprKind::BinaryOp { op: BinaryOp::Mul, .. }));
+            assert!(matches!(
+                right.kind,
+                ExprKind::BinaryOp {
+                    op: BinaryOp::Mul,
+                    ..
+                }
+            ));
         } else {
             panic!("Expected BinaryOp");
         }
@@ -1374,7 +1399,12 @@ mod tests {
     #[test]
     fn test_parse_if_statement() {
         let stmt = parse_statement("IF x > 0 THEN y := 1; END_IF;").unwrap();
-        if let StmtKind::If { condition, then_body, .. } = &stmt.kind {
+        if let StmtKind::If {
+            condition,
+            then_body,
+            ..
+        } = &stmt.kind
+        {
             assert!(matches!(condition.kind, ExprKind::BinaryOp { .. }));
             assert_eq!(then_body.len(), 1);
         } else {
@@ -1420,13 +1450,19 @@ mod tests {
         let expr = parse_expression("-x").unwrap();
         assert!(matches!(
             expr.kind,
-            ExprKind::UnaryOp { op: UnaryOp::Neg, .. }
+            ExprKind::UnaryOp {
+                op: UnaryOp::Neg,
+                ..
+            }
         ));
 
         let expr = parse_expression("NOT flag").unwrap();
         assert!(matches!(
             expr.kind,
-            ExprKind::UnaryOp { op: UnaryOp::Not, .. }
+            ExprKind::UnaryOp {
+                op: UnaryOp::Not,
+                ..
+            }
         ));
     }
 

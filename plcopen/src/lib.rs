@@ -61,7 +61,7 @@ pub mod st;
 
 // Security limits and validation
 pub mod security;
-pub use security::{SecurityError, SecurityLimits, validate_xml};
+pub use security::{validate_xml, SecurityError, SecurityLimits};
 
 /// Type alias for the root project element
 pub type Project = Root_project_Inline;
@@ -101,7 +101,7 @@ pub fn from_str_secure<'a, T: Deserialize<'a>>(
 ) -> Result<T, SecureParseError> {
     // Validate XML against security limits
     validate_xml(xml, &limits)?;
-    
+
     // Parse with quick-xml
     xml_from_str(xml).map_err(SecureParseError::Parse)
 }
@@ -111,7 +111,7 @@ pub fn from_str_secure<'a, T: Deserialize<'a>>(
 pub enum SecureParseError {
     #[error("Parse error: {0}")]
     Parse(#[from] quick_xml::DeError),
-    
+
     #[error("Security limit exceeded: {0}")]
     Security(#[from] SecurityError),
 }
@@ -157,7 +157,7 @@ mod tests {
 
         let result: Result<Project, _> = from_str(xml);
         assert!(result.is_ok(), "Failed to parse: {:?}", result.err());
-        
+
         let project = result.unwrap();
         assert!(project.file_header.is_some());
         assert!(project.content_header.is_some());
@@ -168,11 +168,14 @@ mod tests {
         // Test with real PLCopen file if available
         let home = match std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
             Ok(h) => h,
-            Err(_) => { eprintln!("Skipping test: HOME not set"); return; }
+            Err(_) => {
+                eprintln!("Skipping test: HOME not set");
+                return;
+            }
         };
         let path = std::path::Path::new(&home)
             .join("devpublic/dataplc/plcopen/bbr/projects/iec61131_lang_test/plc.xml");
-        
+
         if !path.exists() {
             eprintln!("Skipping test: {:?} not found", path);
             return;
@@ -180,9 +183,14 @@ mod tests {
 
         let xml = std::fs::read_to_string(&path).expect("Failed to read file");
         let result: Result<Project, _> = from_str(&xml);
-        
-        assert!(result.is_ok(), "Failed to parse {:?}: {:?}", path, result.err());
-        
+
+        assert!(
+            result.is_ok(),
+            "Failed to parse {:?}: {:?}",
+            path,
+            result.err()
+        );
+
         let project = result.unwrap();
         assert!(project.file_header.is_some(), "Missing fileHeader");
         assert!(project.content_header.is_some(), "Missing contentHeader");
@@ -193,11 +201,13 @@ mod tests {
     fn test_parse_multiple_bbr_files() {
         let home = match std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
             Ok(h) => h,
-            Err(_) => { eprintln!("Skipping test: HOME not set"); return; }
+            Err(_) => {
+                eprintln!("Skipping test: HOME not set");
+                return;
+            }
         };
-        let base = std::path::Path::new(&home)
-            .join("devpublic/dataplc/plcopen/bbr/projects");
-        
+        let base = std::path::Path::new(&home).join("devpublic/dataplc/plcopen/bbr/projects");
+
         if !base.exists() {
             eprintln!("Skipping test: test data not found");
             return;
@@ -221,7 +231,7 @@ mod tests {
 
             let xml = std::fs::read_to_string(&path).expect("Failed to read file");
             let result: Result<Project, _> = from_str(&xml);
-            
+
             if result.is_ok() {
                 parsed += 1;
             } else {
@@ -229,7 +239,12 @@ mod tests {
             }
         }
 
-        assert!(failed.is_empty(), "Failed to parse {} files: {:?}", failed.len(), failed);
+        assert!(
+            failed.is_empty(),
+            "Failed to parse {} files: {:?}",
+            failed.len(),
+            failed
+        );
         eprintln!("Successfully parsed {} project files", parsed);
     }
 
@@ -237,11 +252,14 @@ mod tests {
     fn test_parse_standard_function_blocks() {
         let home = match std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
             Ok(h) => h,
-            Err(_) => { eprintln!("Skipping test: HOME not set"); return; }
+            Err(_) => {
+                eprintln!("Skipping test: HOME not set");
+                return;
+            }
         };
         let path = std::path::Path::new(&home)
             .join("devpublic/dataplc/plcopen/bbr/Standard_Function_Blocks.xml");
-        
+
         if !path.exists() {
             eprintln!("Skipping test: Standard_Function_Blocks.xml not found");
             return;
@@ -249,9 +267,13 @@ mod tests {
 
         let xml = std::fs::read_to_string(&path).expect("Failed to read file");
         let result: Result<Project, _> = from_str(&xml);
-        
-        assert!(result.is_ok(), "Failed to parse Standard_Function_Blocks.xml: {:?}", result.err());
-        
+
+        assert!(
+            result.is_ok(),
+            "Failed to parse Standard_Function_Blocks.xml: {:?}",
+            result.err()
+        );
+
         let project = result.unwrap();
         let _types = project.types.expect("Missing types");
         eprintln!("Standard Function Blocks library loaded successfully");
@@ -261,11 +283,13 @@ mod tests {
     fn test_parse_bbr_examples() {
         let home = match std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
             Ok(h) => h,
-            Err(_) => { eprintln!("Skipping test: HOME not set"); return; }
+            Err(_) => {
+                eprintln!("Skipping test: HOME not set");
+                return;
+            }
         };
-        let base = std::path::Path::new(&home)
-            .join("devpublic/dataplc/plcopen/bbr/exemples");
-        
+        let base = std::path::Path::new(&home).join("devpublic/dataplc/plcopen/bbr/exemples");
+
         if !base.exists() {
             eprintln!("Skipping test: examples not found");
             return;
@@ -290,7 +314,7 @@ mod tests {
 
             let xml = std::fs::read_to_string(&path).expect("Failed to read file");
             let result: Result<Project, _> = from_str(&xml);
-            
+
             if result.is_ok() {
                 parsed += 1;
             } else {
@@ -298,7 +322,12 @@ mod tests {
             }
         }
 
-        assert!(failed.is_empty(), "Failed to parse {} examples: {:?}", failed.len(), failed);
+        assert!(
+            failed.is_empty(),
+            "Failed to parse {} examples: {:?}",
+            failed.len(),
+            failed
+        );
         eprintln!("Successfully parsed {} example files", parsed);
     }
 
@@ -306,11 +335,13 @@ mod tests {
     fn test_extract_st_from_real_files() {
         let home = match std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
             Ok(h) => h,
-            Err(_) => { eprintln!("Skipping test: HOME not set"); return; }
+            Err(_) => {
+                eprintln!("Skipping test: HOME not set");
+                return;
+            }
         };
-        let base = std::path::Path::new(&home)
-            .join("devpublic/dataplc/plcopen/bbr/exemples");
-        
+        let base = std::path::Path::new(&home).join("devpublic/dataplc/plcopen/bbr/exemples");
+
         if !base.exists() {
             eprintln!("Skipping test: examples not found");
             return;
@@ -324,20 +355,20 @@ mod tests {
 
         let xml = std::fs::read_to_string(&path).expect("Failed to read file");
         let st_blocks = crate::st::extract_all_st_from_xml(&xml);
-        
+
         assert!(!st_blocks.is_empty(), "Expected ST code in first_steps");
-        
+
         let mut parsed_count = 0;
         eprintln!("Found {} POUs with ST code:", st_blocks.len());
         for (name, code) in &st_blocks {
             eprintln!("  {}: {} chars", name, code.len());
-            
+
             // Skip very short code (likely SFC conditions like "TRUE")
             if code.len() < 10 {
                 eprintln!("    (skipped - too short, likely SFC condition)");
                 continue;
             }
-            
+
             // Try to parse each ST block
             // Note: iec61131 requires complete POU declarations, but PLCopen stores body code
             // Wrap in a minimal function declaration for parsing
@@ -349,8 +380,12 @@ mod tests {
                 eprintln!("    (failed to parse - may not be valid ST or requires declarations)");
             }
         }
-        
+
         // We expect at least some ST blocks to parse successfully
-        eprintln!("Successfully parsed {} of {} ST blocks", parsed_count, st_blocks.len());
+        eprintln!(
+            "Successfully parsed {} of {} ST blocks",
+            parsed_count,
+            st_blocks.len()
+        );
     }
 }

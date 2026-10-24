@@ -10,7 +10,7 @@ use l5x::Controller;
 use crate::analysis::ProjectAnalysis;
 
 use crate::config::UndefinedTagsConfig;
-use crate::report::{Report, Severity, Rule, RuleKind};
+use crate::report::{Report, Rule, RuleKind, Severity};
 
 /// Detector for undefined tags.
 pub struct UndefinedTagsDetector<'a> {
@@ -31,23 +31,20 @@ impl<'a> UndefinedTagsDetector<'a> {
 
         // Collect all defined tags
         let defined_tags = self.collect_defined_tags(controller);
-        
+
         // Collect all AOI names (they can appear as instruction-like references)
-        let aoi_names: HashSet<String> = analysis.aoi_definitions
-            .iter()
-            .cloned()
-            .collect();
+        let aoi_names: HashSet<String> = analysis.aoi_definitions.iter().cloned().collect();
 
         // Check each referenced tag
         for tag_ref in analysis.unique_tags() {
             // Extract base tag name (before any dots or brackets)
             let base_name = extract_base_name(tag_ref);
-            
+
             // Skip if defined
             if defined_tags.contains(base_name) {
                 continue;
             }
-            
+
             // Skip if it's an AOI name
             if aoi_names.contains(base_name) {
                 continue;
@@ -68,7 +65,10 @@ impl<'a> UndefinedTagsDetector<'a> {
                 Severity::Warning,
                 "Controller".to_string(),
                 base_name.to_string(),
-                format!("Tag '{}' is referenced but not defined (may be alias or I/O)", base_name),
+                format!(
+                    "Tag '{}' is referenced but not defined (may be alias or I/O)",
+                    base_name
+                ),
             ));
         }
     }
@@ -142,9 +142,29 @@ fn is_builtin_tag(name: &str) -> bool {
     let upper = name.to_uppercase();
     matches!(
         upper.as_str(),
-        "S:FS" | "S:N" | "S:Z" | "S:V" | "S:C" | "S:MINOR" | "S:MAJOR" |
-        "AFI" | "NOP" | "GSV" | "SSV" | "MSG" | "JSR" | "RET" | "SBR" |
-        "UID" | "UIE" | "FOR" | "BRK" | "RES" | "EOT" | "EVENT" | "TASK"
+        "S:FS"
+            | "S:N"
+            | "S:Z"
+            | "S:V"
+            | "S:C"
+            | "S:MINOR"
+            | "S:MAJOR"
+            | "AFI"
+            | "NOP"
+            | "GSV"
+            | "SSV"
+            | "MSG"
+            | "JSR"
+            | "RET"
+            | "SBR"
+            | "UID"
+            | "UIE"
+            | "FOR"
+            | "BRK"
+            | "RES"
+            | "EOT"
+            | "EVENT"
+            | "TASK"
     )
 }
 

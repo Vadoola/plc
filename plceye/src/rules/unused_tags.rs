@@ -9,7 +9,7 @@ use l5x::Controller;
 use crate::analysis::ProjectAnalysis;
 
 use crate::config::UnusedTagsConfig;
-use crate::report::{Report, Severity, Rule, RuleKind};
+use crate::report::{Report, Rule, RuleKind, Severity};
 
 /// Detector for unused tags.
 pub struct UnusedTagsDetector<'a> {
@@ -30,13 +30,9 @@ impl<'a> UnusedTagsDetector<'a> {
 
         // Collect all defined tags from controller and program scopes
         let defined_tags = self.collect_defined_tags(controller);
-        
+
         // Collect all used tags from analysis
-        let used_tags: HashSet<&str> = analysis
-            .tag_xref
-            .keys()
-            .map(|s| s.as_str())
-            .collect();
+        let used_tags: HashSet<&str> = analysis.tag_xref.keys().map(|s| s.as_str()).collect();
 
         // Find unused tags
         for (tag_name, scope) in &defined_tags {
@@ -111,7 +107,7 @@ impl<'a> UnusedTagsDetector<'a> {
 fn glob_match(pattern: &str, text: &str) -> bool {
     let pattern = pattern.to_lowercase();
     let text = text.to_lowercase();
-    
+
     let mut p_chars = pattern.chars().peekable();
     let mut t_chars = text.chars().peekable();
 
@@ -181,7 +177,7 @@ mod tests {
             ignore_scopes: vec![],
         };
         let detector = UnusedTagsDetector::new(&config);
-        
+
         assert!(detector.matches_ignore_pattern("_internal"));
         assert!(detector.matches_ignore_pattern("HMI_Button"));
         assert!(!detector.matches_ignore_pattern("MyTag"));

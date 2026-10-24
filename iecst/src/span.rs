@@ -19,7 +19,10 @@ impl Span {
 
     /// Create a span at a single position.
     pub fn at(position: usize) -> Self {
-        Self { start: position, end: position + 1 }
+        Self {
+            start: position,
+            end: position + 1,
+        }
     }
 
     /// Create an empty/dummy span.

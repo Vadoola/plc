@@ -38,17 +38,20 @@ mod report;
 mod rules;
 
 // Core types
-pub use config::{RuleConfig, GeneralConfig, UnusedTagsConfig, UndefinedTagsConfig, EmptyRoutinesConfig, UnusedAoisConfig, UnusedDataTypesConfig, ComplexityConfig, NestingConfig};
+pub use config::{
+    ComplexityConfig, EmptyRoutinesConfig, GeneralConfig, NestingConfig, RuleConfig,
+    UndefinedTagsConfig, UnusedAoisConfig, UnusedDataTypesConfig, UnusedTagsConfig,
+};
 pub use detector::RuleDetector;
-pub use error::{Error, Result, L5xParseErrorKind, ConfigErrorKind};
-pub use loader::{LoadedProject, FileFormat};
-pub use report::{Report, Rule, Severity, RuleKind};
+pub use error::{ConfigErrorKind, Error, L5xParseErrorKind, Result};
+pub use loader::{FileFormat, LoadedProject};
+pub use report::{Report, Rule, RuleKind, Severity};
 
 // Analysis types (for extensions)
-pub use analysis::{ProjectAnalysis, ParseStats, analyze_controller};
-pub use analysis::{PlcopenAnalysis, PlcopenStats, analyze_plcopen_project};
+pub use analysis::{analyze_controller, ParseStats, ProjectAnalysis};
+pub use analysis::{analyze_plcopen_project, PlcopenAnalysis, PlcopenStats};
 
 // Re-export parser crates for extensions
+pub use iec61131;
 pub use l5x;
 pub use plcopen;
-pub use iec61131;
