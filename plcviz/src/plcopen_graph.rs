@@ -185,7 +185,6 @@ fn extract_pou_calls_from_text(code: &str, known_pous: &HashSet<String>) -> Vec<
 
 /// Extract calls from FBD body
 /// TODO: Complete implementation
-
 /// Extract referenced type names from a Data (baseType) structure
 fn extract_referenced_types(data: &plcopen::Data) -> Vec<String> {
     let mut types = Vec::new();
@@ -421,10 +420,10 @@ fn extract_calls_from_statement(
                 extract_calls_from_argument(arg, known_pous, calls);
             }
         }
-        Statement::Return { value, .. } => {
-            if let Some(expr) = value {
-                extract_calls_from_expression(expr, known_pous, calls);
-            }
+        Statement::Return {
+            value: Some(expr), ..
+        } => {
+            extract_calls_from_expression(expr, known_pous, calls);
         }
         _ => {}
     }

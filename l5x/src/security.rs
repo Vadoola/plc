@@ -148,9 +148,7 @@ pub fn validate_xml<R: BufRead>(reader: R, limits: &SecurityLimits) -> Result<()
                 }
             }
             Ok(Event::End(_)) => {
-                if depth > 0 {
-                    depth -= 1;
-                }
+                depth = depth.saturating_sub(1);
             }
             Ok(Event::Text(e)) => {
                 let text = e

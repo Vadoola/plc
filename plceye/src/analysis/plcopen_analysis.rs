@@ -607,7 +607,7 @@ fn remove_plc_comments(code: &str) -> String {
             // Block comment (* ... *)
             chars.next(); // consume *
             let mut prev = ' ';
-            while let Some(c) = chars.next() {
+            for c in chars.by_ref() {
                 if prev == '*' && c == ')' {
                     break;
                 }
@@ -617,7 +617,7 @@ fn remove_plc_comments(code: &str) -> String {
         } else if ch == '/' && chars.peek() == Some(&'/') {
             // Line comment // ...
             chars.next(); // consume second /
-            while let Some(c) = chars.next() {
+            for c in chars.by_ref() {
                 if c == '\n' {
                     result.push(c);
                     break;

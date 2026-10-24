@@ -341,13 +341,11 @@ fn extract_terms_from_expression(input: &str, terms: &mut Vec<OperandValue>) {
                     current.push(c);
                 }
             }
+            ' ' if paren_depth == 0 && bracket_depth == 0 => {
+                // Don't split on space, just skip it
+            }
             ' ' => {
-                // Space at top level can be a separator
-                if paren_depth == 0 && bracket_depth == 0 {
-                    // Don't split on space, just skip it
-                } else {
-                    current.push(c);
-                }
+                current.push(c);
             }
             _ => {
                 current.push(c);

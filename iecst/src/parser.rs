@@ -112,11 +112,7 @@ impl<'a> Parser<'a> {
     fn parse_expr_prec(&mut self, min_prec: u8) -> ParseResult<Expr> {
         let mut left = self.parse_unary()?;
 
-        loop {
-            let Some(op) = self.current_binary_op() else {
-                break;
-            };
-
+        while let Some(op) = self.current_binary_op() {
             let prec = op.precedence();
             if prec < min_prec {
                 break;
@@ -534,11 +530,7 @@ impl<'a> Parser<'a> {
 
     /// Continue parsing binary expression from a given left side.
     fn continue_binary_expr(&mut self, mut left: Expr, min_prec: u8) -> ParseResult<Expr> {
-        loop {
-            let Some(op) = self.current_binary_op() else {
-                break;
-            };
-
+        while let Some(op) = self.current_binary_op() {
             let prec = op.precedence();
             if prec < min_prec {
                 break;

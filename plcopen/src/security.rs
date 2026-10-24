@@ -144,10 +144,8 @@ pub fn validate_xml(xml: &str, limits: &SecurityLimits) -> Result<(), SecurityEr
                     });
                 }
             }
-            '>' => {
-                if current_depth > 0 {
-                    current_depth -= 1;
-                }
+            '>' if current_depth > 0 => {
+                current_depth -= 1;
             }
             _ => {}
         }
